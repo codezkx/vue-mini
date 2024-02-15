@@ -10,10 +10,11 @@ const get = createGetter(false);
 const set = createSetter();
 
 const readonlyGet = createGetter(true);
+const shallowReadonlyGet = createGetter(true, true);
 
 export const mutableHandler = { get, set };
 
-function createGetter(isReadonly) {
+function createGetter(isReadonly = false, isShallow = false) {
   return function (target, key) {
     // 判断是否为 Reactive
     if (key === ReactiveFlags.IS_REACTIVE) {
@@ -21,16 +22,18 @@ function createGetter(isReadonly) {
     } else if (key === ReactiveFlags.IS_READONLY) {
       return isReadonly;
     }
-
-    // 获取目标对象的属性值
-    const res = Reflect.get(target, key);
-    // 处理对象嵌套问题
-    if (isObject(res)) {
-      return isReadonly ? readonly(res) : reactive(res);
-    }
     // 收集依赖
     if (!isReadonly) {
       track(target, key);
+    }
+    // 获取目标对象的属性值
+    const res = Reflect.get(target, key);
+    if (isShallow) {
+      return res;
+    }
+    // 处理对象嵌套问题
+    if (isObject(res)) {
+      return isReadonly ? readonly(res) : reactive(res);
     }
     // 返回对应的数据
     return res;
@@ -57,3 +60,7 @@ export const readonlyHandlers = {
     return true;
   },
 };
+
+export const shallowReadonlyHhandlers = extend({}, readonlyHandlers, {
+  get: shallowReadonlyGet,
+});
