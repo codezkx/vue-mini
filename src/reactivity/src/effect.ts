@@ -14,6 +14,7 @@ class ReactiveEffect {
     this.scheduler = scheduler;
   }
 
+  // 主要目的时依赖收集
   run() {
     activeEffect = this;
     return this?._fn();

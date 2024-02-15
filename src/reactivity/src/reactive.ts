@@ -20,3 +20,18 @@ export function reactive(row) {
     },
   });
 }
+
+export function readonly(row) {
+  return new Proxy(row, {
+    get: function (target, key) {
+      const res = Reflect.get(target, key);
+      return res;
+    },
+    set: function (target, key, value) {
+      console.warn(
+        `Set operation on key "${String(key)}" failed: target is readonly.`
+      );
+      return true;
+    },
+  });
+}
