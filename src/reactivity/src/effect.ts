@@ -1,5 +1,8 @@
 import { extend } from "../../shared";
 
+let activeEffect; // 获取当前effect实例对象
+let shouldTrack; // 是否需要追踪
+
 // 使用class存储当前的FN(依赖更新函数)
 class ReactiveEffect {
   public scheduler: Function | undefined;
@@ -14,14 +17,22 @@ class ReactiveEffect {
     this.scheduler = scheduler;
   }
 
-  // 主要目的时依赖收集
+  // 主要目的是更新依赖和收集依赖
   run() {
+    // 当stop后不需要执行后续操作
+    if (!this.active) {
+      return this?._fn();
+    }
+    shouldTrack = true;
     activeEffect = this;
-    return this?._fn();
+    const result = this?._fn();
+    shouldTrack = false;
+    return result;
   }
 
   // 这里注意调用stop的实例， 相当于删除对应的this
   stop() {
+    // 处理多次执行stop的情况
     if (this.active) {
       cleanupEffect(this);
       if (this.onStop) {
@@ -32,15 +43,20 @@ class ReactiveEffect {
   }
 }
 
+// 清除当前实例所有的依赖
 function cleanupEffect(effect) {
   effect.deps.forEach((dep) => {
     dep.delete(effect);
   });
+  // 初始化数据
+  effect.deps.length = 0;
 }
 
 // 收集依赖
 const targetMap = new Map();
 export function track(target, key) {
+  // 判断是否需要收集依赖
+  if (isTracking()) return false;
   // target(Map) -> key(Map) -> dep( Set 唯一)
   // 1、取出target的Map
   let depsMap = targetMap.get(target); // 取出key
@@ -60,12 +76,15 @@ export function track(target, key) {
     // 4.2、存储对应的Set
     depsMap.set(key, dep);
   }
-  // 5、判断effect是否调用
-  if (!activeEffect) return false;
-  // 6、把当前的effect 添加到 dep中
+  // 5、把当前的effect 添加到 dep中
   dep.add(activeEffect); // 这里连接收集依赖和触发依赖的关系
-  // 7、实现stop 的清空依赖功能
+  // 6、实现stop 的清空依赖功能
   activeEffect.deps.push(dep);
+}
+
+function isTracking() {
+  // shouldTrack 是处理a++此等情况的（同时触发get 和 set）
+  return !shouldTrack || !activeEffect;
 }
 
 export function trigger(target, key) {
@@ -81,7 +100,6 @@ export function trigger(target, key) {
   }
 }
 
-let activeEffect; // 获取当前effect实例对象
 // 每执行有一次effect就会创建一个fn的实例
 export function effect(fn, options: any = {}) {
   // 存储当前的fn

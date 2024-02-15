@@ -1,5 +1,6 @@
-import { extend } from "../../shared";
 import { track, trigger } from "../src/effect";
+import { ReactiveFlags } from "./constants";
+import { extend } from "../../shared";
 
 /* 
   优化点 当get执行时不需要每次调用createGetter或者createSetter，所以只需要模块引用时执行一次即可(利用缓存技术)
@@ -13,13 +14,20 @@ export const mutableHandler = { get, set };
 
 function createGetter(isReadonly) {
   return function (target, key) {
-    // 1、获取目标对象的属性值
+    // 判断是否为 Reactive
+    if (key === ReactiveFlags.IS_REACTIVE) {
+      return !isReadonly;
+    } else if (key === ReactiveFlags.IS_READONLY) {
+      return isReadonly;
+    }
+
+    // 获取目标对象的属性值
     const res = Reflect.get(target, key);
-    // 2、收集依赖
+    // 收集依赖
     if (!isReadonly) {
       track(target, key);
     }
-    // 3、返回对应的数据
+    // 返回对应的数据
     return res;
   };
 }

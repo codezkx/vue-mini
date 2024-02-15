@@ -79,7 +79,13 @@ describe("effect", () => {
     obj.prop = 2;
     expect(dummy).toBe(2);
     stop(runner);
-    obj.prop = 3;
+    // obj.prop = 3; 这里只会执行set
+    /* 
+      1、get 操作时是不希望执行依赖收集操作的
+      2、set 时不希望依赖更新
+    
+    */
+    obj.prop++; // 这里的测试是有问题的， 这里会执行get 和 set
     expect(dummy).toBe(2);
 
     runner();
