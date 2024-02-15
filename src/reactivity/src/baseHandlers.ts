@@ -1,6 +1,7 @@
 import { track, trigger } from "../src/effect";
 import { ReactiveFlags } from "./constants";
-import { extend } from "../../shared";
+import { extend, isObject } from "../../shared";
+import { reactive, readonly } from "./reactive";
 
 /* 
   优化点 当get执行时不需要每次调用createGetter或者createSetter，所以只需要模块引用时执行一次即可(利用缓存技术)
@@ -23,6 +24,10 @@ function createGetter(isReadonly) {
 
     // 获取目标对象的属性值
     const res = Reflect.get(target, key);
+    // 处理对象嵌套问题
+    if (isObject(res)) {
+      return isReadonly ? readonly(res) : reactive(res);
+    }
     // 收集依赖
     if (!isReadonly) {
       track(target, key);

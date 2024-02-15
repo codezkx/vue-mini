@@ -11,11 +11,11 @@ export function readonly(row) {
 
 export function isReactive(row) {
   // 获取target中的属性（即使不存在）会触发get
-  return !!row[ReactiveFlags.IS_REACTIVE];
+  return !!row?.[ReactiveFlags.IS_REACTIVE];
 }
 
 export function isReadonly(row) {
-  return !!row[ReactiveFlags.IS_READONLY];
+  return !!row?.[ReactiveFlags.IS_READONLY];
 }
 
 function createActiveObject(raw, baseHandlers) {
