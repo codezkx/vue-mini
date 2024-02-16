@@ -10,8 +10,9 @@ import { reactive } from "./reactive";
 class RefImpl {
   private _value: any;
   private _rawValue: any;
-
   private dep: Set<unknown>;
+
+  public __v_isRef: boolean = true;
   constructor(value) {
     // 存储最初的值
     this._rawValue = value;
@@ -49,4 +50,12 @@ export function ref(value) {
 
 function convert(value) {
   return isObject(value) ? reactive(value) : value;
+}
+
+export function isRef(value) {
+  return !!value.__v_isRef;
+}
+
+export function unRef(value) {
+  return isRef(value) ? value.value : value;
 }
