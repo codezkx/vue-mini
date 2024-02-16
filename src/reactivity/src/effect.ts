@@ -56,7 +56,7 @@ function cleanupEffect(effect) {
 const targetMap = new Map();
 export function track(target, key) {
   // 判断是否需要收集依赖
-  if (isTracking()) return false;
+  if (!isTracking()) return false;
   // target(Map) -> key(Map) -> dep( Set 唯一)
   // 1、取出target的Map
   let depsMap = targetMap.get(target); // 取出key
@@ -76,21 +76,30 @@ export function track(target, key) {
     // 4.2、存储对应的Set
     depsMap.set(key, dep);
   }
+  trackEffects(dep);
+}
+
+export function trackEffects(dep) {
+  if (dep.has(activeEffect)) return;
   // 5、把当前的effect 添加到 dep中
   dep.add(activeEffect); // 这里连接收集依赖和触发依赖的关系
   // 6、实现stop 的清空依赖功能
   activeEffect.deps.push(dep);
 }
 
-function isTracking() {
+export function isTracking() {
   // shouldTrack 是处理a++此等情况的（同时触发get 和 set）
-  return !shouldTrack || !activeEffect;
+  return activeEffect !== undefined && shouldTrack;
 }
 
 export function trigger(target, key) {
   // 核心点是如何触发依赖更新 执行ReactiveEffect类中的run 方法
   const depsMap = targetMap.get(target);
   const deps = depsMap.get(key);
+  triggerEffects(deps);
+}
+
+export function triggerEffects(deps) {
   for (let dep of deps) {
     if (dep.scheduler) {
       dep.scheduler();
