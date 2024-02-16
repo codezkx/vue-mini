@@ -59,3 +59,29 @@ export function isRef(value) {
 export function unRef(value) {
   return isRef(value) ? value.value : value;
 }
+
+// 实现在模板访问ref时不需要.value 此方法就是解构的方法
+export function proxyRef(objectWithRefs) {
+  /* 
+    为什么使用代理？
+      因为需要在获取和设置时需要触发get 和 set  又因为objectWithRefs是对象
+      所以使用proxy  （如果不是对象需要特别处理， 这里就不做处理了）
+  */
+  return new Proxy(objectWithRefs, {
+    get(target, key) {
+      return unRef(Reflect.get(target, key));
+    },
+
+    set(target, key, value) {
+      if (isRef(target[key]) && !isRef(value)) {
+        return (target[key].value = value);
+      } else {
+        /* 
+          a.value= o // 此步骤省略   不是ref时也成立
+          a = o // 操作相当于下面
+        */
+        return Reflect.set(target, key, value);
+      }
+    },
+  });
+}
