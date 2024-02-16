@@ -4,7 +4,7 @@ let activeEffect; // 获取当前effect实例对象
 let shouldTrack; // 是否需要追踪
 
 // 使用class存储当前的FN(依赖更新函数)
-class ReactiveEffect {
+export class ReactiveEffect {
   public scheduler: Function | undefined;
   public deps: any[] = [];
   public onStop?: () => void;
