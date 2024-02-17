@@ -1,5 +1,6 @@
 import { isObject } from "@/shared/utils";
 import { createComponentInstance, setupComponent } from "./component";
+import { ShapeFlags } from "@/shared/SgaoiFlags";
 
 /**
  * @param vnode 节点
@@ -16,9 +17,10 @@ export function render(vnode, container) {
  *
  */
 export function patch(vnode, container) {
-  if (isObject(vnode.type)) {
+  const { shapeFlags } = vnode;
+  if (shapeFlags & ShapeFlags.STATEFUL_COMPONENT) {
     processComponent(vnode, container);
-  } else if (typeof vnode.type === "string") {
+  } else if (shapeFlags & ShapeFlags.ELEMENT) {
     proceessElement(vnode, container);
   }
 }
@@ -58,12 +60,13 @@ function mountElement(vnode: any, container: any) {
   // 创建对应的元素节点
   const el = (vnode.el = document.createElement(vnode.type));
   const { children, props } = vnode;
+  const { shapeFlags } = vnode;
 
   // 判断是否有children，如果那么判断是字符串还是数据
   if (children) {
-    if (typeof children === "string") {
+    if (shapeFlags & ShapeFlags.TEXT_CHILDREN) {
       el.textContent = children;
-    } else if (Array.isArray(children)) {
+    } else if (shapeFlags & ShapeFlags.ARRAY_CHILDREN) {
       mountChildren(children, el);
     }
   }

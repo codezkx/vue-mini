@@ -1,3 +1,5 @@
+import { ShapeFlags } from "@/shared/SgaoiFlags";
+
 /**
  * @param type Object | string
  * @param props 节点属性
@@ -9,7 +11,20 @@ export function createVnode(type, props?, children?) {
     type,
     props,
     children,
+    shapeFlags: getShapeFlag(type), // 元素类型标识
     el: null,
   };
+  // 判断children是什么类型
+  if (typeof children === "string") {
+    vnode.shapeFlags |= ShapeFlags.TEXT_CHILDREN;
+  } else if (Array.isArray(children)) {
+    vnode.shapeFlags |= ShapeFlags.ARRAY_CHILDREN;
+  }
   return vnode;
+}
+
+function getShapeFlag(type) {
+  return typeof type === "string"
+    ? ShapeFlags.ELEMENT
+    : ShapeFlags.STATEFUL_COMPONENT;
 }
