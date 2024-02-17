@@ -1,5 +1,11 @@
 import { createComponentInstance, setupComponent } from "./component";
 
+/**
+ * @param vnode 节点
+ * @param container App组件实例
+ *
+ *
+ */
 export function render(vnode, container) {
   patch(vnode, container);
 }
@@ -24,12 +30,12 @@ export function processComponent(vnode, container) {
   mountComponent(vnode, container);
 }
 
-export function mountComponent(vnode, container) {
-  const instance = createComponentInstance(vnode);
+export function mountComponent(initialVNode, container) {
+  const instance = createComponentInstance(initialVNode);
   // 初始组件属性
   setupComponent(instance);
   // 处理render函数
-  setupRenderEffect(instance, vnode, container);
+  setupRenderEffect(instance, initialVNode, container);
 }
 
 function setupRenderEffect(instance: any, vnode: any, container: any) {
@@ -38,6 +44,4 @@ function setupRenderEffect(instance: any, vnode: any, container: any) {
   patch(subTree, container);
 }
 
-function proceessElement(vnode: any, container: any) {
-  throw new Error("Function not implemented.");
-}
+function proceessElement(vnode: any, container: any) {}
