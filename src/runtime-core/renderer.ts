@@ -1,3 +1,4 @@
+import { isObject } from "@/shared/utils";
 import { createComponentInstance, setupComponent } from "./component";
 
 /**
@@ -15,7 +16,7 @@ export function render(vnode, container) {
  *
  */
 export function patch(vnode, container) {
-  if (typeof vnode.type === "object") {
+  if (isObject(vnode.type)) {
     processComponent(vnode, container);
   } else if (typeof vnode.type === "string") {
     proceessElement(vnode, container);
@@ -44,4 +45,46 @@ function setupRenderEffect(instance: any, vnode: any, container: any) {
   patch(subTree, container);
 }
 
-function proceessElement(vnode: any, container: any) {}
+// 处理元素
+function proceessElement(vnode: any, container: any) {
+  mountElement(vnode, container);
+}
+
+// 经过上面的处理确定vnode.type是element string类型
+function mountElement(vnode: any, container: any) {
+  // 创建对应的元素节点
+  const el = document.createElement(vnode.type);
+  const { children, props } = vnode;
+
+  // 判断是否有children，如果那么判断是字符串还是数据
+  if (children) {
+    if (typeof children === "string") {
+      el.textContent = children;
+    } else if (Array.isArray(children)) {
+      mountChildren(children, el);
+    }
+  }
+
+  // 设置对应的props
+  if (props) {
+    for (let prop in props) {
+      // 判断是否为继承
+      if (!props.hasOwnProperty(prop)) return;
+      const val = props[prop];
+      el.setAttribute(prop, val);
+    }
+  }
+  // 添加到对应的容器上
+  container.append(el);
+}
+
+/**
+ *
+ *@description 递归处理children
+ *
+ */
+function mountChildren(children: any[], el: any) {
+  children.forEach((vnode) => {
+    patch(vnode, el);
+  });
+}
