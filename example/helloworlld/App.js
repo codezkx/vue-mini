@@ -14,7 +14,18 @@ export const App = {
           console.log("clicked");
         },
       },
-      [h("div", {}, "hi," + this.msg), h(Foo, { count: 1 })]
+      [
+        h("div", {}, "hi," + this.msg),
+        h(Foo, {
+          count: 1,
+          // onAdd() {
+          //   console.log("on add");
+          // },
+          onAddFoo(a, b) {
+            console.log("on Add Foo", a, b);
+          },
+        }),
+      ]
     );
   },
 
