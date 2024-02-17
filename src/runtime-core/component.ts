@@ -1,3 +1,5 @@
+import { shallowReadonly } from "@/reactivity/src/reactive";
+import { initProps } from "./componentProps";
 import { PublicInstanceProxyHandlers } from "./componentPublicInstance";
 
 export function createComponentInstance(vnode) {
@@ -12,7 +14,8 @@ export function createComponentInstance(vnode) {
 
 // 初始对应的props、slot、setup
 export function setupComponent(instance) {
-  // initProps()
+  console.log(instance, "instance");
+  initProps(instance, instance.vnode.props);
   // initSlots
   setupStatefulComponent(instance);
 }
@@ -31,7 +34,7 @@ export function setupStatefulComponent(instance) {
      *    Object：需要把此对象注入到instance的上下文中不然rander函数不能通过this访问到setup中返回的数据
      * }
      */
-    const setupResult = setup();
+    const setupResult = setup(shallowReadonly(instance.props));
     handleSetupResult(instance, setupResult);
   }
 }

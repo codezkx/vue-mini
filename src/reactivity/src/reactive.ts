@@ -30,6 +30,9 @@ export function isProxy(row) {
   return isReactive(row) || isReadonly(row);
 }
 
-function createActiveObject(raw, baseHandlers) {
-  return new Proxy(raw, baseHandlers);
+function createActiveObject(target, baseHandlers) {
+  if (!target) {
+    console.warn(`target ${target} 必须是一个对象`);
+  }
+  return new Proxy(target, baseHandlers);
 }
