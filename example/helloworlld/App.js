@@ -1,6 +1,10 @@
 import { h } from "../../lib/guide-mini-vue.esm.js";
+
+window.self = null;
 export const App = {
   render() {
+    // 测试$el
+    window.self = this;
     return h(
       "div",
       {
@@ -14,7 +18,7 @@ export const App = {
 
   setup() {
     return {
-      msg: "vue3",
+      msg: "mini-vue3",
     };
   },
 };

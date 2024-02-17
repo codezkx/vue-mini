@@ -32,7 +32,7 @@ export function processComponent(vnode, container) {
 }
 
 export function mountComponent(initialVNode, container) {
-  const instance = createComponentInstance(initialVNode);
+  const instance: any = createComponentInstance(initialVNode);
   // 初始组件属性
   setupComponent(instance);
   // 处理render函数
@@ -40,9 +40,12 @@ export function mountComponent(initialVNode, container) {
 }
 
 function setupRenderEffect(instance: any, vnode: any, container: any) {
-  const subTree = instance.render();
-
+  const { proxy } = instance;
+  // 把代理对象绑定到render中
+  const subTree = instance.render.call(proxy);
   patch(subTree, container);
+  // 获取当前的组件实例根节点
+  vnode.el = subTree.el;
 }
 
 // 处理元素
@@ -53,7 +56,7 @@ function proceessElement(vnode: any, container: any) {
 // 经过上面的处理确定vnode.type是element string类型
 function mountElement(vnode: any, container: any) {
   // 创建对应的元素节点
-  const el = document.createElement(vnode.type);
+  const el = (vnode.el = document.createElement(vnode.type));
   const { children, props } = vnode;
 
   // 判断是否有children，如果那么判断是字符串还是数据
