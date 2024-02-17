@@ -1,4 +1,4 @@
-import { isObject } from "@/shared/utils";
+import { isObject, isOn } from "@/shared/index";
 import { createComponentInstance, setupComponent } from "./component";
 import { ShapeFlags } from "@/shared/SgaoiFlags";
 
@@ -76,10 +76,15 @@ function mountElement(vnode: any, container: any) {
     for (let prop in props) {
       // 判断是否为继承
       if (!props.hasOwnProperty(prop)) return;
+      if (isOn(prop)) {
+        const event = prop.slice(2).toLowerCase();
+        el.addEventListener(event, props[prop]);
+      }
       const val = props[prop];
       el.setAttribute(prop, val);
     }
   }
+
   // 添加到对应的容器上
   container.append(el);
 }
