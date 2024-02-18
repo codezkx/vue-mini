@@ -1,6 +1,5 @@
-import { isObject, isOn } from "@/shared/index";
 import { createComponentInstance, setupComponent } from "./component";
-import { ShapeFlags } from "@/shared/SgaoiFlags";
+import { isOn, ShapeFlags } from "@/shared";
 
 /**
  * @param vnode 节点

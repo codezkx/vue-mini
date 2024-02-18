@@ -1,4 +1,4 @@
-import { ShapeFlags } from "@/shared/SgaoiFlags";
+import { ShapeFlags } from "@/shared";
 
 /**
  * @param type Object | string
