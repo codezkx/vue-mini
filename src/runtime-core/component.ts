@@ -1,7 +1,9 @@
 import { shallowReadonly } from "@/reactivity/src/reactive";
-import { initProps } from "./componentProps";
 import { PublicInstanceProxyHandlers } from "./componentPublicInstance";
 import { emit } from "./componentEmit";
+import { initSlots } from "./componentSlots";
+import { initProps } from "./componentProps";
+import { isObject } from "@/shared";
 
 export function createComponentInstance(vnode) {
   const component: any = {
@@ -9,6 +11,7 @@ export function createComponentInstance(vnode) {
     type: vnode.type,
     setupState: {},
     props: {},
+    slots: {}, // 存放插槽的数据
     emit: () => {},
   };
   // 把组件实例传递给emit第一个参数， 这样用户就不需要传入组件实例了
@@ -19,7 +22,7 @@ export function createComponentInstance(vnode) {
 // 初始对应的props、slot、setup
 export function setupComponent(instance) {
   initProps(instance, instance.vnode.props);
-  // initSlots();
+  initSlots(instance, instance.vnode.children);
   setupStatefulComponent(instance);
 }
 
