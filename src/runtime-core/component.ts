@@ -4,6 +4,7 @@ import { emit } from "./componentEmit";
 import { initSlots } from "./componentSlots";
 import { initProps } from "./componentProps";
 import { isObject } from "@/shared";
+import { proxyRefs } from "@/reactivity/src";
 
 let currentInstance = null
 
@@ -58,7 +59,7 @@ export function setupStatefulComponent(instance) {
 function handleSetupResult(instance, setupResult) {
   // todo Function
   if (typeof setupResult === "object") {
-    instance.setupState = setupResult;
+    instance.setupState = proxyRefs(setupResult);
   }
 
   finishComponentSetup(instance);

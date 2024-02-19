@@ -61,7 +61,7 @@ export function unRef(value) {
 }
 
 // 实现在模板访问ref时不需要.value 此方法就是解构的方法
-export function proxyRef(objectWithRefs) {
+export function proxyRefs(objectWithRefs) {
   /* 
     为什么使用代理？
       因为需要在获取和设置时需要触发get 和 set  又因为objectWithRefs是对象
@@ -73,7 +73,8 @@ export function proxyRef(objectWithRefs) {
     },
 
     set(target, key, value) {
-      if (isRef(target[key]) && !isRef(value)) {
+      const oldValue = target[key];
+      if (isRef(oldValue) && !isRef(value)) {
         return (target[key].value = value);
       } else {
         /* 
