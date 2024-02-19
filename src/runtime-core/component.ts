@@ -47,7 +47,7 @@ export function setupStatefulComponent(instance) {
     const setupResult = setup(shallowReadonly(instance.props), {
       emit: instance.emit,
     });
-    currentInstance = null
+    setCurrentInstance(null)
     handleSetupResult(instance, setupResult);
   }
 }
