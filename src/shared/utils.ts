@@ -2,6 +2,8 @@ const reNumber = /^[-+]?(((0|[1-9]\d*)?\.\d+)|(([1-9]\d*)\.)|(0|[1-9]\d*))$/
 
 export const extend = Object.assign;
 
+export const EMPTY_OBJ = {}
+
 export function hasChanged(value, odlValue) {
   return !Object.is(value, odlValue);
 }

@@ -10,14 +10,18 @@ let currentInstance = null
 
 export function createComponentInstance(vnode, parent) {
   const component: any = {
-    vnode,
     type: vnode.type,
-    setupState: {},
+    vnode,
+    next: null, // 需要更新的 vnode，用于更新 component 类型的组件
     props: {},
+    parent,
+    provides: parent ? parent.provides : {}, //  获取 parent 的 provides 作为当前组件的初始化值 这样就可以继承 parent.provides 的属性了
+    proxy: null,
+    isMounted: false,
+    subTree: {},
     slots: {}, // 存放插槽的数据
     emit: () => {},
-    parent, // 父级节点
-    provides: parent? parent.provides : {}, // 获取父级的provide
+
   };
   // 把组件实例传递给emit第一个参数， 这样用户就不需要传入组件实例了
   component.emit = emit.bind(null, component);

@@ -5,13 +5,19 @@ function createElement(type) {
     return document.createElement(type);
 }
 
-function patchProp(el, key, val) {
+function patchProp(el, key, odlProp, newProp) {
     // 判断是否为继承
     if (isOn(key)) {
       const event = key.slice(2).toLowerCase();
-      el.addEventListener(event, val);
+      el.addEventListener(event, newProp);
+    } else {
+        // 为空需要删除
+        if (newProp === null || newProp === undefined || newProp === "") {
+            el.removeAttribute(key, newProp);
+        } else {
+            el.setAttribute(key, newProp);
+        }
     }
-    el.setAttribute(key, val);
 }
 
 function insert(child, parent) {

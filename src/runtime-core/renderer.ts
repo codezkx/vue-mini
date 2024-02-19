@@ -1,57 +1,58 @@
 import { createComponentInstance, setupComponent } from "./component";
-import { ShapeFlags } from "@/shared";
+import { EMPTY_OBJ, ShapeFlags } from "@/shared";
 import { Fragment, Text } from "./vnode";
 import { createAppAPI } from "./createApp";
+import { effect } from "@/reactivity/src";
 
 
 // createRenderer 实现自定义渲染器  需要没有 自定义渲染器 看分支runtime-core
 export function createRenderer(options) {
   const { 
-    createElement,
-    patchProp,
-    insert
+    createElement: hostCreateElement,
+    patchProp: hostPatchProp,
+    insert: hostInsert,
    } = options
 
   /**
    * @param vnode 节点
    * @param container App组件实例
    *
-   *
    */
   function render(vnode, container) {
-    patch(vnode, container);
+    patch(null ,vnode, container);
   }
 
   /**
    * @description 基于vnode的类型进行不同类型的组件处理  patch(主要是用于递归渲染节点)
-   *
+   * @param n1 老的vnode节点  如果不存在说明在初始化
+   * @param n2 新的vnode节点
    */
-  function patch(vnode, container, parentComponent = null) {
-    const { type, shapeFlags } = vnode;
+  function patch(n1, n2, container, parentComponent = null) {
+    const { type, shapeFlags } = n2;
 
     switch(type) {
       case Fragment: // Fragment类型, 只需要渲染children. 插槽
-        processFragment(vnode, container, parentComponent);
+        processFragment(n1, n2, container, parentComponent);
         break;
       case Text: // 渲染children为纯文本节点
-        processText(vnode, container);
+        processText(n1, n2, container);
         break;
       default:
         if (shapeFlags & ShapeFlags.STATEFUL_COMPONENT) {
-          processComponent(vnode, container, parentComponent);
+          processComponent(n1, n2, container, parentComponent);
         } else if (shapeFlags & ShapeFlags.ELEMENT) {
-          proceessElement(vnode, container, parentComponent);
+          proceessElement(n1, n2, container, parentComponent);
         }
         break;
     }
   }
 
-  function processFragment(vnode: any, container: any, parentComponent) {
-    mountChildren(vnode.children, container, parentComponent)
+  function processFragment(n1, n2, container: any, parentComponent) {
+    mountChildren(n2.children, container, parentComponent)
   }
 
-  function processText(vnode, container) {
-    const { children } = vnode;
+  function processText(n1, n2, container) {
+    const { children } = n2;
     // 创建文本节点
     const textNode = document.createTextNode(children);
     // 添加文本节点
@@ -62,8 +63,8 @@ export function createRenderer(options) {
    * @description 处理组件类型
    *
    * **/
-  function processComponent(vnode, container, parentComponent) {
-    mountComponent(vnode, container, parentComponent);
+  function processComponent(n1, n2, container, parentComponent) {
+    mountComponent(n2, container, parentComponent);
   }
 
   function mountComponent(initialVNode, container, parentComponent) {
@@ -75,24 +76,52 @@ export function createRenderer(options) {
   }
 
   function setupRenderEffect(instance: any, vnode: any, container: any, parentComponent) {
-    const { proxy } = instance;
-    // 把代理对象绑定到render中
-    const subTree = instance.render.call(proxy);
-    // 把父级实例传入到渲染过程中 主要实现provide/inject功能
-    patch(subTree, container, instance);
-    // 获取当前的组件实例根节点
-    vnode.el = subTree.el;
+    effect(() => {
+      if (!instance.isMounted) {
+        const { proxy } = instance;
+        // 把代理对象绑定到render中; 缓存上一次的subTree
+        const subTree = (instance.subTree = instance.render.call(proxy));
+        // 把父级实例传入到渲染过程中 主要实现provide/inject功能
+        patch(null, subTree, container, instance);
+        // 获取当前的组件实例根节点
+        vnode.el = subTree.el;
+        instance.isMounted = true
+      } else {
+        const { proxy } = instance;
+        // 把代理对象绑定到render中
+        const subTree = instance.render.call(proxy);
+        const prevSubTree = instance.subTree; // 获取之前的subTree
+        // 更新subTree
+        instance.subTree = subTree
+        console.log(subTree, prevSubTree)
+        // // 把父级实例传入到渲染过程中 主要实现provide/inject功能
+        patch(prevSubTree, subTree, container, instance);
+        // // 获取当前的组件实例根节点
+        // vnode.el = subTree.el;
+      }
+    })
   }
 
-  // 处理元素
-  function proceessElement(vnode: any, container: any, parentComponent) {
-    mountElement(vnode, container, parentComponent);
+  /*
+    更新数据
+      需要出发依赖是响应式发生更行, 在更具变化的值去对比是否需要发生更新.、
+        1、首先判断是否为初始化
+        2、需要获取上一次更新的subTree和当前的subTree进行递归对比
+
+  */
+  function proceessElement(n1, n2: any, container: any, parentComponent) {
+    // n1不存在说明在初始化
+    if (!n1) {
+      mountElement(n2, container, parentComponent);
+    } else {
+      patchElement(n1, n2, container, parentComponent)
+    }
   }
 
   // 经过上面的处理确定vnode.type是element string类型
   function mountElement(vnode: any, container: any, parentComponent) {
     // 创建对应的元素节点
-    const el = (vnode.el = createElement(vnode.type));
+    const el = (vnode.el = hostCreateElement(vnode.type));
     const { children, props } = vnode;
     const { shapeFlags } = vnode;
 
@@ -110,12 +139,49 @@ export function createRenderer(options) {
       for (let key in props) {
         const val = props[key]
         // if (!props.hasOwnProperty(key)) return;
-        patchProp(el, key, val)
+        hostPatchProp(el, key, null, val)
       }
     }
 
     // 添加到对应的容器上
-    insert(el, container)
+    hostInsert(el, container)
+  }
+
+  function patchElement(n1, n2, container, parentComponent) {
+    const odlProps = n1.props || EMPTY_OBJ;
+    const newProps = n2.props || EMPTY_OBJ;
+    // 更新n2 el
+    const el = (n2.el = n1.el);
+    patchProps(el, odlProps, newProps)
+  }
+
+  /* 
+    三种情况
+      1、props 值发生了值的更新(不为null/undefined)
+      2、props 值变为null/undefined 则删除
+      3、老的props中的属性在新的props中不存在,则删除
+  */
+  function patchProps(el, odlProps, newProps) {
+    if (odlProps !== newProps) {
+      // 处理1和2
+      for (const key in newProps) {
+        const preProp = odlProps[key];
+        const nextProp = newProps[key];
+        if (preProp !== nextProp) {
+          hostPatchProp(el, key, preProp, nextProp)
+        }
+      }
+      if (odlProps !== EMPTY_OBJ) {
+         // 处理3
+          for (const key in odlProps) {
+            // 把变化以后不存在的属性值删除
+            if (!(key in newProps)) {
+              const preProp = odlProps[key];
+              hostPatchProp(el, key, preProp[key], null)
+            }
+          }
+      }
+    }
   }
 
   /**
@@ -125,7 +191,7 @@ export function createRenderer(options) {
   */
   function mountChildren(children: any[], el: any, parentComponent) {
     children.forEach((vnode) => {
-      patch(vnode, el, parentComponent);
+      patch(null, vnode, el, parentComponent);
     });
   }
 
