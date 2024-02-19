@@ -15,20 +15,20 @@ export function createVNode(type, props?, children?) {
     type,
     props,
     children,
-    shapeFlags: getShapeFlag(type), // 元素类型标识
+    shapeFlag: getShapeFlag(type), // 元素类型标识
     el: null,
   };
   // 判断children是什么类型
   if (typeof children === "string") {
-    vnode.shapeFlags |= ShapeFlags.TEXT_CHILDREN;
+    vnode.shapeFlag |= ShapeFlags.TEXT_CHILDREN;
   } else if (Array.isArray(children)) {
-    vnode.shapeFlags |= ShapeFlags.ARRAY_CHILDREN;
+    vnode.shapeFlag |= ShapeFlags.ARRAY_CHILDREN;
   }
 
   // 判断是否为组件 & children为对象
-  if (vnode.shapeFlags & ShapeFlags.STATEFUL_COMPONENT) {
+  if (vnode.shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
     if (typeof children === "object") {
-      vnode.shapeFlags |= ShapeFlags.SLOTS_CHILDREN;
+      vnode.shapeFlag |= ShapeFlags.SLOTS_CHILDREN;
     }
   }
   return vnode;
