@@ -14,11 +14,11 @@ export const App = {
     //   footer: h("p", {}, "footer")
     // });
     // 作用域插槽
-    const foo = h(Foo, {}, {
-      header: ({age}) => [h("p", {}, "header" + age), createTextVNode('纯文本节点')], 
-      footer: () => h("p", {}, "footer")
-    });
-    return h("div", {}, [app, foo]);
+    // const foo = h(Foo, {}, {
+    //   header: ({age}) => [h("p", {}, "header" + age), createTextVNode('纯文本节点')], 
+    //   footer: () => h("p", {}, "footer")
+    // });
+    return h("div", {}, [app]);
   },
 
   setup() {

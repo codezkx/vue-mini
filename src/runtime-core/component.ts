@@ -7,7 +7,7 @@ import { isObject } from "@/shared";
 
 let currentInstance = null
 
-export function createComponentInstance(vnode) {
+export function createComponentInstance(vnode, parent) {
   const component: any = {
     vnode,
     type: vnode.type,
@@ -15,6 +15,8 @@ export function createComponentInstance(vnode) {
     props: {},
     slots: {}, // 存放插槽的数据
     emit: () => {},
+    parent, // 父级节点
+    provides: parent? parent.provides : {}, // 获取父级的provide
   };
   // 把组件实例传递给emit第一个参数， 这样用户就不需要传入组件实例了
   component.emit = emit.bind(null, component);
