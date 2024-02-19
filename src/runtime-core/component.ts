@@ -1,15 +1,27 @@
 import { shallowReadonly } from "@/reactivity/src/reactive";
-import { initProps } from "./componentProps";
 import { PublicInstanceProxyHandlers } from "./componentPublicInstance";
 import { emit } from "./componentEmit";
+import { initSlots } from "./componentSlots";
+import { initProps } from "./componentProps";
+import { isObject } from "@/shared";
+import { proxyRefs } from "@/reactivity/src";
 
-export function createComponentInstance(vnode) {
+let currentInstance = null
+
+export function createComponentInstance(vnode, parent) {
   const component: any = {
-    vnode,
     type: vnode.type,
-    setupState: {},
+    vnode,
+    next: null, // 需要更新的 vnode，用于更新 component 类型的组件
     props: {},
+    parent,
+    provides: parent ? parent.provides : {}, //  获取 parent 的 provides 作为当前组件的初始化值 这样就可以继承 parent.provides 的属性了
+    proxy: null,
+    isMounted: false,
+    subTree: {},
+    slots: {}, // 存放插槽的数据
     emit: () => {},
+
   };
   // 把组件实例传递给emit第一个参数， 这样用户就不需要传入组件实例了
   component.emit = emit.bind(null, component);
@@ -19,7 +31,7 @@ export function createComponentInstance(vnode) {
 // 初始对应的props、slot、setup
 export function setupComponent(instance) {
   initProps(instance, instance.vnode.props);
-  // initSlots();
+  initSlots(instance, instance.vnode.children);
   setupStatefulComponent(instance);
 }
 
@@ -30,6 +42,8 @@ export function setupStatefulComponent(instance) {
   instance.proxy = new Proxy({ _: instance }, PublicInstanceProxyHandlers);
   const { setup } = Component;
   if (setup) {
+    // 在setup之前赋值
+    setCurrentInstance(instance);
     /**
      * @description 注意这里可能返回一个函数或者一个对象
      * @returns {
@@ -40,6 +54,7 @@ export function setupStatefulComponent(instance) {
     const setupResult = setup(shallowReadonly(instance.props), {
       emit: instance.emit,
     });
+    setCurrentInstance(null)
     handleSetupResult(instance, setupResult);
   }
 }
@@ -48,7 +63,7 @@ export function setupStatefulComponent(instance) {
 function handleSetupResult(instance, setupResult) {
   // todo Function
   if (typeof setupResult === "object") {
-    instance.setupState = setupResult;
+    instance.setupState = proxyRefs(setupResult);
   }
 
   finishComponentSetup(instance);
@@ -61,3 +76,13 @@ function finishComponentSetup(instance) {
     instance.render = Component.render;
   }
 }
+
+function setCurrentInstance(instance) {
+  currentInstance = instance
+}
+
+// 获取当前组件实例(注意: 只能在setup函数中调用)
+export function getCurrentInstance() {
+    return currentInstance
+}
+
