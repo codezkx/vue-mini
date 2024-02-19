@@ -22,10 +22,10 @@ export function patch(vnode, container) {
 
   switch(type) {
     case Fragment: // Fragment类型, 只需要渲染children. 插槽
-      processFragment(vnode, container)
+      processFragment(vnode, container);
       break;
-    case Text:
-      processText(vnode, container)
+    case Text: // 渲染children为纯文本节点
+      processText(vnode, container);
       break;
     default:
       if (shapeFlags & ShapeFlags.STATEFUL_COMPONENT) {
@@ -42,7 +42,6 @@ function processFragment(vnode: any, container: any) {
 }
 
 function processText(vnode, container) {
-  console.log(container, "container")
   const { children } = vnode;
   // 创建文本节点
   const textNode = document.createTextNode(children);

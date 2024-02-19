@@ -5,6 +5,8 @@ import { initSlots } from "./componentSlots";
 import { initProps } from "./componentProps";
 import { isObject } from "@/shared";
 
+let currentInstance = null
+
 export function createComponentInstance(vnode) {
   const component: any = {
     vnode,
@@ -33,6 +35,8 @@ export function setupStatefulComponent(instance) {
   instance.proxy = new Proxy({ _: instance }, PublicInstanceProxyHandlers);
   const { setup } = Component;
   if (setup) {
+    // 在setup之前赋值
+    setCurrentInstance(instance);
     /**
      * @description 注意这里可能返回一个函数或者一个对象
      * @returns {
@@ -43,6 +47,7 @@ export function setupStatefulComponent(instance) {
     const setupResult = setup(shallowReadonly(instance.props), {
       emit: instance.emit,
     });
+    currentInstance = null
     handleSetupResult(instance, setupResult);
   }
 }
@@ -64,3 +69,13 @@ function finishComponentSetup(instance) {
     instance.render = Component.render;
   }
 }
+
+function setCurrentInstance(instance) {
+  currentInstance = instance
+}
+
+// 获取当前组件实例(注意: 只能在setup函数中调用)
+export function getCurrentInstance() {
+    return currentInstance
+}
+

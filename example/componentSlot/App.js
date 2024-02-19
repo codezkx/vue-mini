@@ -1,8 +1,9 @@
-import { h, createTextVNode } from "../../lib/guide-mini-vue.esm.js";
+import { h, createTextVNode, getCurrentInstance } from "../../lib/guide-mini-vue.esm.js";
 import { Foo } from "./Foo.js";
 
 
 export const App = {
+  name: "App",
   render() {
     const app = h("div", {}, "App");
     // 默认插槽
@@ -21,6 +22,7 @@ export const App = {
   },
 
   setup() {
+    console.log(getCurrentInstance())
     return {
       msg: "mini-vue3",
     };
