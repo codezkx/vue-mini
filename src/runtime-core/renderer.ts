@@ -1,6 +1,7 @@
-import { isObject, isOn } from "@/shared/index";
+import { isOn } from "@/shared";
 import { createComponentInstance, setupComponent } from "./component";
 import { ShapeFlags } from "@/shared/SgaoiFlags";
+import { Fragment, Text } from "./vnode";
 
 /**
  * @param vnode 节点
@@ -17,12 +18,36 @@ export function render(vnode, container) {
  *
  */
 export function patch(vnode, container) {
-  const { shapeFlags } = vnode;
-  if (shapeFlags & ShapeFlags.STATEFUL_COMPONENT) {
-    processComponent(vnode, container);
-  } else if (shapeFlags & ShapeFlags.ELEMENT) {
-    proceessElement(vnode, container);
+  const { type, shapeFlags } = vnode;
+
+  switch(type) {
+    case Fragment: // Fragment类型, 只需要渲染children. 插槽
+      processFragment(vnode, container)
+      break;
+    case Text:
+      processText(vnode, container)
+      break;
+    default:
+      if (shapeFlags & ShapeFlags.STATEFUL_COMPONENT) {
+        processComponent(vnode, container);
+      } else if (shapeFlags & ShapeFlags.ELEMENT) {
+        proceessElement(vnode, container);
+      }
+      break;
   }
+}
+
+function processFragment(vnode: any, container: any) {
+  mountChildren(vnode.children, container)
+}
+
+function processText(vnode, container) {
+  console.log(container, "container")
+  const { children } = vnode;
+  // 创建文本节点
+  const textNode = document.createTextNode(children);
+  // 添加文本节点
+  container.append(textNode)
 }
 
 /**

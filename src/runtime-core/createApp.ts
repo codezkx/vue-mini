@@ -1,4 +1,4 @@
-import { createVnode } from "./vnode";
+import { createVNode } from "./vnode";
 import { render } from "./renderer";
 
 export function createApp(rootComponent) {
@@ -6,7 +6,7 @@ export function createApp(rootComponent) {
     // 初始化
     mount(rootContainer) {
       // vue创建虚拟节点（对应虚拟DOM）
-      const vnode = createVnode(rootComponent);
+      const vnode = createVNode(rootComponent);
       render(vnode, rootContainer);
     },
   };
