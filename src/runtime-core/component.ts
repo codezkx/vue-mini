@@ -6,7 +6,7 @@ import { initProps } from "./componentProps";
 import { isObject } from "@/shared";
 import { proxyRefs } from "@/reactivity/src";
 
-let currentInstance = null
+let currentInstance = null;
 
 export function createComponentInstance(vnode, parent) {
   const component: any = {
@@ -21,7 +21,6 @@ export function createComponentInstance(vnode, parent) {
     subTree: {},
     slots: {}, // 存放插槽的数据
     emit: () => {},
-
   };
   // 把组件实例传递给emit第一个参数， 这样用户就不需要传入组件实例了
   component.emit = emit.bind(null, component);
@@ -54,7 +53,7 @@ export function setupStatefulComponent(instance) {
     const setupResult = setup(shallowReadonly(instance.props), {
       emit: instance.emit,
     });
-    setCurrentInstance(null)
+    setCurrentInstance(null);
     handleSetupResult(instance, setupResult);
   }
 }
@@ -78,11 +77,10 @@ function finishComponentSetup(instance) {
 }
 
 function setCurrentInstance(instance) {
-  currentInstance = instance
+  currentInstance = instance;
 }
 
 // 获取当前组件实例(注意: 只能在setup函数中调用)
 export function getCurrentInstance() {
-    return currentInstance
+  return currentInstance;
 }
-
