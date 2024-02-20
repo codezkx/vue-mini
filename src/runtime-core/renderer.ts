@@ -4,16 +4,15 @@ import { Fragment, Text } from "./vnode";
 import { createAppAPI } from "./createApp";
 import { effect } from "@/reactivity/src";
 
-
 // createRenderer 实现自定义渲染器  需要没有 自定义渲染器 看分支runtime-core
 export function createRenderer(options) {
-  const { 
+  const {
     createElement: hostCreateElement,
     patchProp: hostPatchProp,
     insert: hostInsert,
     remove: hostRemove,
-    setElementText: hostSetElementText
-   } = options
+    setElementText: hostSetElementText,
+  } = options;
 
   /**
    * @param vnode 节点
@@ -21,7 +20,7 @@ export function createRenderer(options) {
    *
    */
   function render(vnode, container) {
-    patch(null ,vnode, container);
+    patch(null, vnode, container);
   }
 
   /**
@@ -32,7 +31,7 @@ export function createRenderer(options) {
   function patch(n1, n2, container, parentComponent = null) {
     const { type, shapeFlag } = n2;
 
-    switch(type) {
+    switch (type) {
       case Fragment: // Fragment类型, 只需要渲染children. 插槽
         processFragment(n1, n2, container, parentComponent);
         break;
@@ -50,7 +49,7 @@ export function createRenderer(options) {
   }
 
   function processFragment(n1, n2, container: any, parentComponent) {
-    mountChildren(n2.children, container, parentComponent)
+    mountChildren(n2.children, container, parentComponent);
   }
 
   function processText(n1, n2, container) {
@@ -58,7 +57,7 @@ export function createRenderer(options) {
     // 创建文本节点
     const textNode = document.createTextNode(children);
     // 添加文本节点
-    container.append(textNode)
+    container.append(textNode);
   }
 
   /**
@@ -70,14 +69,22 @@ export function createRenderer(options) {
   }
 
   function mountComponent(initialVNode, container, parentComponent) {
-    const instance: any = createComponentInstance(initialVNode, parentComponent);
+    const instance: any = createComponentInstance(
+      initialVNode,
+      parentComponent
+    );
     // 初始组件属性
     setupComponent(instance);
     // 处理render函数
     setupRenderEffect(instance, initialVNode, container, parentComponent);
   }
 
-  function setupRenderEffect(instance: any, vnode: any, container: any, parentComponent) {
+  function setupRenderEffect(
+    instance: any,
+    vnode: any,
+    container: any,
+    parentComponent
+  ) {
     effect(() => {
       if (!instance.isMounted) {
         const { proxy } = instance;
@@ -87,20 +94,20 @@ export function createRenderer(options) {
         patch(null, subTree, container, instance);
         // 获取当前的组件实例根节点
         vnode.el = subTree.el;
-        instance.isMounted = true
+        instance.isMounted = true;
       } else {
         const { proxy } = instance;
         // 把代理对象绑定到render中
         const subTree = instance.render.call(proxy);
         const prevSubTree = instance.subTree; // 获取之前的subTree
         // 更新subTree
-        instance.subTree = subTree
+        instance.subTree = subTree;
         // // 把父级实例传入到渲染过程中 主要实现provide/inject功能
         patch(prevSubTree, subTree, container, instance);
         // // 获取当前的组件实例根节点
         // vnode.el = subTree.el;
       }
-    })
+    });
   }
 
   /*
@@ -115,7 +122,7 @@ export function createRenderer(options) {
     if (!n1) {
       mountElement(n2, container, parentComponent);
     } else {
-      patchElement(n1, n2, container, parentComponent)
+      patchElement(n1, n2, container, parentComponent);
     }
   }
 
@@ -138,14 +145,14 @@ export function createRenderer(options) {
     // 设置对应的props
     if (props) {
       for (let key in props) {
-        const val = props[key]
+        const val = props[key];
         // if (!props.hasOwnProperty(key)) return;
-        hostPatchProp(el, key, null, val)
+        hostPatchProp(el, key, null, val);
       }
     }
 
     // 添加到对应的容器上
-    hostInsert(el, container)
+    hostInsert(el, container);
   }
 
   function patchElement(n1, n2, container, parentComponent) {
@@ -153,8 +160,8 @@ export function createRenderer(options) {
     const newProps = n2.props || EMPTY_OBJ;
     // 更新n2 el
     const el = (n2.el = n1.el);
-    patchChildren(n1, n2, container, parentComponent)
-    patchProps(el, odlProps, newProps)
+    patchChildren(n1, n2, container, parentComponent);
+    patchProps(el, odlProps, newProps);
   }
 
   /* 
@@ -166,32 +173,32 @@ export function createRenderer(options) {
    */
   function patchChildren(n1, n2, container, parentComponent) {
     const prevShapelag = n1.shapeFlag;
-    const c1 = n1.children
-    const { shapeFlag }= n2;
-    const c2 = n2.children
+    const c1 = n1.children;
+    const { shapeFlag } = n2;
+    const c2 = n2.children;
     if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
       if (prevShapelag & ShapeFlags.ARRAY_CHILDREN) {
         // 删除对应的节点
-        unmountChildren(n1.children)
+        unmountChildren(n1.children);
       }
       // 文本节点不想等时才去更新文本
       if (c1 !== c2) {
         // 设置文本节点
-        hostSetElementText(container, c2)
+        hostSetElementText(container, c2);
       }
     } else {
       // 老的是 text 新的是 array
       if (prevShapelag & ShapeFlags.TEXT_CHILDREN) {
-        hostSetElementText(container, null)
-        mountChildren(c2, container, parentComponent)
+        hostSetElementText(container, null);
+        mountChildren(c2, container, parentComponent);
       }
     }
   }
 
   function unmountChildren(children) {
-    for (let i=0; i < children.length; i++) {
-      const el = children[i].el
-      hostRemove(el)
+    for (let i = 0; i < children.length; i++) {
+      const el = children[i].el;
+      hostRemove(el);
     }
   }
 
@@ -208,18 +215,18 @@ export function createRenderer(options) {
         const preProp = odlProps[key];
         const nextProp = newProps[key];
         if (preProp !== nextProp) {
-          hostPatchProp(el, key, preProp, nextProp)
+          hostPatchProp(el, key, preProp, nextProp);
         }
       }
       if (odlProps !== EMPTY_OBJ) {
-         // 处理3
-          for (const key in odlProps) {
-            // 把变化以后不存在的属性值删除
-            if (!(key in newProps)) {
-              const preProp = odlProps[key];
-              hostPatchProp(el, key, preProp[key], null)
-            }
+        // 处理3
+        for (const key in odlProps) {
+          // 把变化以后不存在的属性值删除
+          if (!(key in newProps)) {
+            const preProp = odlProps[key];
+            hostPatchProp(el, key, preProp[key], null);
           }
+        }
       }
     }
   }
@@ -227,8 +234,8 @@ export function createRenderer(options) {
   /**
    *
    *@description 递归处理children
-  *
-  */
+   *
+   */
   function mountChildren(children: any[], el: any, parentComponent) {
     children.forEach((vnode) => {
       patch(null, vnode, el, parentComponent);
@@ -236,6 +243,6 @@ export function createRenderer(options) {
   }
 
   return {
-    createApp: createAppAPI(render)
-  }
+    createApp: createAppAPI(render),
+  };
 }

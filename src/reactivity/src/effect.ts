@@ -1,4 +1,4 @@
-import { extend } from "../../shared";
+import { extend } from "@/shared";
 
 let activeEffect; // 获取当前effect实例对象
 let shouldTrack; // 是否需要追踪

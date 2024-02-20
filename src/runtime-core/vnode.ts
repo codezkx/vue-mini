@@ -1,4 +1,4 @@
-import { isObject, ShapeFlags } from "@/shared";
+import { ShapeFlags } from "@/shared";
 
 // 用 symbol 作为唯一标识
 export const Text = Symbol("Text"); // 纯文本节点
