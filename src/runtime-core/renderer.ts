@@ -244,7 +244,6 @@ export function createRenderer(options) {
     }
 
     // 2、右侧对比 定位出e1和e2的位置 方便删除或者添加元素
-
     while (i <= e1 && i <= e2) {
       const n1 = c1[e1];
       const n2 = c2[e2];
@@ -279,6 +278,70 @@ export function createRenderer(options) {
       while (i <= e1) {
         hostRemove(c1[i].el);
         i++;
+      }
+    } else {
+      /* 
+        中间对比
+        5.1
+        a,b,(c,d),f,g
+        a,b,(e,c),f,g
+        i = 2, e1 = 3, e2 = 3
+					D 节点在新的里面是没有的 - 需要删除掉
+					C 节点 props 也发生了变化
+      */
+      // 1、设置对应的元素下标值
+      const s1 = i;
+      const s2 = i;
+
+			/* 
+				下面两步
+					5.1.1
+						a,b,(c,e,d),f,g
+						a,b,(e,c),f,g
+						中间部分，老的比新的多， 那么多出来的直接就可以被干掉(优化删除逻辑)
+			*/
+			const toBePatched = e2 - s2 + 1; // 新节点不同的总数  (e,c)  为
+			let patched = 0; // 记录新节点更新了几次
+
+      // 2、设置对应的映射
+      const keyToNewIndexMap = new Map();
+
+      // 3、循环c2设置对应的Map
+      for (let j = s2; j <= e2; j++) {
+        const nextChild: any = c2[j];
+        keyToNewIndexMap.set(nextChild.key, j);
+      }
+
+      // 4、遍历新的节点
+      for (let j = s1; j <= e1; j++) {
+        const prevChild = c1[j];
+				// 如果 patched 更新的节点 >= 新节点的总数 说明来节点还有新节点没有的节点,需要删除.
+				if (patched >= toBePatched) {
+					hostRemove(prevChild.el)
+					continue;
+				}
+
+        let newIndex;
+        // 当key存在时, 获取的对应的索引值
+        if (prevChild.key !== null) {
+          newIndex = keyToNewIndexMap.get(prevChild.key);
+        } else {
+          // 当key不存在时, 获取的对应的索引值
+          for (let k = s2; k < e2; k++) {
+            if (isSameVNodeType(prevChild, c2[k])) {
+              newIndex = k;
+              break;
+            }
+          }
+        }
+        // 没有newIndex 说明在preChild中存在多余的vnode
+        if (newIndex === undefined) {
+          hostRemove(prevChild.el);
+        } else {
+          // 递归查看children是否有更改
+          patch(prevChild, c2[newIndex], container, parentComponent, null);
+					patched++;
+        }
       }
     }
   }
