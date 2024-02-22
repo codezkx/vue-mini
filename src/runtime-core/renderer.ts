@@ -212,7 +212,8 @@ export function createRenderer(options) {
     // 更新n2 el
     const el = (n2.el = n1.el);
     patchProps(el, odlProps, newProps);
-    patchChildren(n1, n2, container, parentComponent, anchor);
+    // 注意传入的容器应该是当前el而不是container
+    patchChildren(n1, n2, el, parentComponent, anchor);
   }
 
   /* 
