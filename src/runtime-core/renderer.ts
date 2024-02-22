@@ -220,10 +220,12 @@ export function createRenderer(options) {
     return n1?.type === n2?.type && n1?.key === n2?.key;
   }
 
-  /* 
-    
-  
-  */
+  /**
+   * 
+   * @description
+   *  diff算法核心逻辑 也是vue3最核心的地方
+   * 
+   */
   function patchKeyedChildren(c1, c2, container, parentComponent, anchor) {
     let i = 0;
     const l2 = c2.length;
@@ -242,7 +244,6 @@ export function createRenderer(options) {
       }
       i++;
     }
-
     // 2、右侧对比 定位出e1和e2的位置 方便删除或者添加元素
     while (i <= e1 && i <= e2) {
       const n1 = c1[e1];
@@ -257,7 +258,6 @@ export function createRenderer(options) {
       e1--;
       e2--;
     }
-
     // 3、新的比老的长
     // 3.1 左侧对比 // 3.1 右侧对比
     // (a b)              (a b) 1 0
@@ -292,7 +292,6 @@ export function createRenderer(options) {
       // 1、设置对应的元素下标值
       const s1 = i;
       const s2 = i;
-
 			/* 
 				下面两步
 					5.1.1
@@ -301,10 +300,22 @@ export function createRenderer(options) {
 						中间部分，老的比新的多， 那么多出来的直接就可以被干掉(优化删除逻辑)
 			*/
 			const toBePatched = e2 - s2 + 1; // 新节点不同的总数  (e,c)  为
-			let patched = 0; // 记录新节点更新了几次
-
+      // 记录新节点更新了几次
+			let patched = 0; 
       // 2、设置对应的映射
       const keyToNewIndexMap = new Map();
+      /* 
+        5.2.1
+        a,b,(c,d,e),f,g
+        a,b,(e,c,d),f,g
+      */
+      // 创建一个定长的数组来优化性能
+      const newIndexToOdlIndexMap = new Array();
+      // 初始还数组 0 代表为null  反向遍历获取稳定的序列 因为左右两边是稳定的序列(左右两边对比得出)
+      for (let j = toBePatched - 1; j >= 0; j--) newIndexToOdlIndexMap[j] = 0;
+
+      let moved = false;
+      let maxNewIndexSoFar = 0;
 
       // 3、循环c2设置对应的Map
       for (let j = s2; j <= e2; j++) {
@@ -327,7 +338,7 @@ export function createRenderer(options) {
           newIndex = keyToNewIndexMap.get(prevChild.key);
         } else {
           // 当key不存在时, 获取的对应的索引值
-          for (let k = s2; k < e2; k++) {
+          for (let k = s2; k <= e2; k++) {
             if (isSameVNodeType(prevChild, c2[k])) {
               newIndex = k;
               break;
@@ -338,9 +349,45 @@ export function createRenderer(options) {
         if (newIndex === undefined) {
           hostRemove(prevChild.el);
         } else {
+          // 这里判断元素是否需要移动, 因为如果c2元素是一个递增, 那么一定是不需要移动元素的. 上一个的newIndex一定比下一个的小.
+          if (newIndex >= maxNewIndexSoFar) {
+            maxNewIndexSoFar = newIndex
+          } else {
+            moved = true
+          }
+          // 这里已经确保c1/c2 存在相同的元素(位置不一样)
+          // 为什么要减去s2  newIndex是从c1第一个元素开始的, newIndexToOdlIndexMap是从不同(与c1对比过后)元素的位置开始
+          newIndexToOdlIndexMap[newIndex - s2] = j + 1; // 需要注意的是i不能为0  所以需要+1  
           // 递归查看children是否有更改
           patch(prevChild, c2[newIndex], container, parentComponent, null);
 					patched++;
+        }
+      }
+      // 获取最长递增子序列
+      const increasingNewIndexSequence = moved ? getSequence(newIndexToOdlIndexMap) : [];
+      let j = increasingNewIndexSequence.length - 1; // 反向获取
+      for (let k = toBePatched - 1; k >= 0; k--) {
+        // 需要移动的位置  a,b,(e,c,d),f,g  s2 为 e 的下标值2; k 就需要移动的位置
+        const nextIndex = s2 + k;
+        const nextChild = c2[nextIndex]; // 获取需要移动的节点
+        // anchor是插入元素的上一个元素
+        const anchor = nextIndex + 1 < l2 ? c2[nextIndex + 1].el : null;
+        /* 
+          判断元素是否需要创建  为0时 元素一定在老节点中不存在,则需要创建.
+            a,b,(c,e),f,g
+            a,b,(e,c,d),f,g
+        */
+        if (newIndexToOdlIndexMap[k] === 0) {
+          // 为什么需要anchor? 因为需要知道添加到那个元素之前
+          patch(null, nextChild, container, parentComponent, anchor)
+        } else if(moved) {
+           // 判断当前节点是否需要移动
+          if (j < 0 || k !== increasingNewIndexSequence[j]) {
+            // 移动位置
+            hostInsert(nextChild.el, container, anchor)
+          } else {
+            j++;
+          }
         }
       }
     }
@@ -394,4 +441,51 @@ export function createRenderer(options) {
   return {
     createApp: createAppAPI(render),
   };
+}
+
+/**
+ * @description
+ *  获取最长递增子序列
+ *  例子: [4, 2, 3, 1, 5] => [1, 2, 4](获取的的是下标值)
+ * 
+ **/
+function getSequence(arr: number[]): number[] {
+  const p = arr.slice();
+  const result = [0];
+  let i, j, u, v, c;
+  const len = arr.length;
+  for (i = 0; i < len; i++) {
+    const arrI = arr[i];
+    if (arrI !== 0) {
+      j = result[result.length - 1];
+      if (arr[j] < arrI) {
+        p[i] = j;
+        result.push(i);
+        continue;
+      }
+      u = 0;
+      v = result.length - 1;
+      while (u < v) {
+        c = (u + v) >> 1;
+        if (arr[result[c]] < arrI) {
+          u = c + 1;
+        } else {
+          v = c;
+        }
+      }
+      if (arrI < arr[result[u]]) {
+        if (u > 0) {
+          p[i] = result[u - 1];
+        }
+        result[u] = i;
+      }
+    }
+  }
+  u = result.length;
+  v = result[u - 1];
+  while (u-- > 0) {
+    result[u] = v;
+    v = p[v];
+  }
+  return result;
 }
