@@ -3,6 +3,7 @@ import { EMPTY_OBJ, ShapeFlags } from "@/shared";
 import { Fragment, Text } from "./vnode";
 import { createAppAPI } from "./createApp";
 import { effect } from "@/reactivity/src";
+import { shouldUpdateComponent } from "./componentRenderUtils";
 
 // createRenderer 实现自定义渲染器  需要没有 自定义渲染器 看分支runtime-core
 export function createRenderer(options) {
@@ -65,14 +66,18 @@ export function createRenderer(options) {
    *
    * **/
   function processComponent(n1, n2, container, parentComponent, anchor) {
-    mountComponent(n2, container, parentComponent, anchor);
+    if (!n1) {
+      mountComponent(n2, container, parentComponent, anchor);
+    } else {
+      updateComponent(n1, n2, container, parentComponent, anchor);
+    }
   }
 
   function mountComponent(initialVNode, container, parentComponent, anchor) {
-    const instance: any = createComponentInstance(
+    const instance: any = (initialVNode.component = createComponentInstance(
       initialVNode,
       parentComponent
-    );
+    ));
     // 初始组件属性
     setupComponent(instance);
     // 处理render函数
@@ -85,6 +90,34 @@ export function createRenderer(options) {
     );
   }
 
+  /**
+   * 
+   * @description
+   *  1、更新组件的数据
+   *  2、调用组件的rander函数
+   *  3、检查是否需要更新
+   * 
+  */
+  function updateComponent(n1, n2, container, parentComponent, anchor) {
+    // n2可能时没有component需要初始化
+    const instance = (n2.component = n1.component);
+    if (shouldUpdateComponent(n1, n2)) {
+      // 那么 next 就是新的 vnode 了（也就是 n2）
+      instance.next = n2 // 引用之前的虚拟节点
+      // 这里的 update 是在 setupRenderEffect 里面初始化的，update 函数除了当内部的响应式对象发生改变的时候会调用
+      // 还可以直接主动的调用(这是属于 effect 的特性)
+      // 调用 update 再次更新调用 patch 逻辑
+      // 在update 中调用的 next 就变成了 n2了
+      // ps：可以详细的看看 update 中 next 的应用
+      // TODO 需要在 update 中处理支持 next 的逻辑
+      instance.update()
+    } else {
+      // 不需要更新的话，那么只需要覆盖下面的属性即可
+      n2.el = n1.el;
+      instance.vnode = n2;
+    }
+  }
+
   function setupRenderEffect(
     instance: any,
     vnode: any,
@@ -92,7 +125,7 @@ export function createRenderer(options) {
     parentComponent,
     anchor
   ) {
-    effect(() => {
+    instance.update = effect(() => {
       if (!instance.isMounted) {
         const { proxy } = instance;
         // 把代理对象绑定到render中; 缓存上一次的subTree
@@ -103,6 +136,13 @@ export function createRenderer(options) {
         vnode.el = subTree.el;
         instance.isMounted = true;
       } else {
+        // 更新组件的Props
+        const { next, vnode } = instance
+        if (next) {
+          next.el = vnode.el;
+          updateComponentPreRender(instance, next)
+        }
+
         const { proxy } = instance;
         // 把代理对象绑定到render中
         const subTree = instance.render.call(proxy);
@@ -110,7 +150,8 @@ export function createRenderer(options) {
         // 更新subTree
         instance.subTree = subTree;
         // // 把父级实例传入到渲染过程中 主要实现provide/inject功能
-        patch(prevSubTree, subTree, prevSubTree.el, instance, anchor);
+        console.log(container)
+        patch(prevSubTree, subTree, container, instance, anchor);
         // // 获取当前的组件实例根节点
         // vnode.el = subTree.el;
       }
@@ -182,7 +223,6 @@ export function createRenderer(options) {
       老的是 array 新的是 array
    */
   function patchChildren(n1, n2, container, parentComponent, anchor) {
-    console.log(n1.key, n2.key);
     const prevShapelag = n1.shapeFlag;
     const c1 = n1.children;
     const { shapeFlag } = n2;
@@ -442,6 +482,19 @@ export function createRenderer(options) {
     createApp: createAppAPI(render),
   };
 }
+
+function updateComponentPreRender(instance, nextNVode) {
+  // 更新 nextVNode 的组件实例
+  // 现在 instance.vnode 是组件实例更新前的
+  // 所以之前的 props 就是基于 instance.vnode.props 来获取
+  // 接着需要更新 vnode ，方便下一次更新的时候获取到正确的值
+  instance.vnode = nextNVode
+  // TODO 后面更新 props 的时候需要对比
+  // const prevProps = instance.vnode.props;
+  instance.next = null
+  instance.props = nextNVode.props
+}
+
 
 /**
  * @description

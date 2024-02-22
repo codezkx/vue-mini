@@ -14,6 +14,7 @@ export function createVNode(type, props?, children?) {
   const vnode = {
     type,
     props,
+    component: {}, // 引用组件的实例,用来更新组件数据更新
     key: props && props.key,
     children,
     shapeFlag: getShapeFlag(type), // 元素类型标识

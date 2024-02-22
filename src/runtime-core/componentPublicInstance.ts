@@ -6,7 +6,7 @@ const publicPropertiesMap = {
   $el: (i) => i.vnode.el,
   $emit: (i) => i.emit,
   $slots: (i) => i.slots,
-  // $props: (i) => i.props,
+  $props: (i) => i.props,
 };
 
 export const PublicInstanceProxyHandlers = {
