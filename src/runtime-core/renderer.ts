@@ -4,6 +4,7 @@ import { Fragment, Text } from "./vnode";
 import { createAppAPI } from "./createApp";
 import { effect } from "@/reactivity/src";
 import { shouldUpdateComponent } from "./componentRenderUtils";
+import { queueJob } from "./scheduler";
 
 // createRenderer 实现自定义渲染器  需要没有 自定义渲染器 看分支runtime-core
 export function createRenderer(options) {
@@ -125,7 +126,8 @@ export function createRenderer(options) {
     parentComponent,
     anchor
   ) {
-    instance.update = effect(() => {
+    instance.update = effect(() => 
+    {
       if (!instance.isMounted) {
         const { proxy } = instance;
         // 把代理对象绑定到render中; 缓存上一次的subTree
@@ -150,10 +152,15 @@ export function createRenderer(options) {
         // 更新subTree
         instance.subTree = subTree;
         // // 把父级实例传入到渲染过程中 主要实现provide/inject功能
-        console.log(container)
+        console.log("update shitu")
         patch(prevSubTree, subTree, container, instance, anchor);
         // // 获取当前的组件实例根节点
         // vnode.el = subTree.el;
+      }
+    }, 
+    {
+      scheduler() {
+        queueJob(instance.update)
       }
     });
   }
