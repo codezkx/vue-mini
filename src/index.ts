@@ -1,3 +1,3 @@
 // 出口
 export * from "./runtime-dom";
-export * from "./reactivity/src"
+export * from "./reactivity/src";
