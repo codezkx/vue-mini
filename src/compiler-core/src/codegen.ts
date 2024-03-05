@@ -1,5 +1,6 @@
+import { isString } from "../../shared";
 import { NodeTypes } from "./ast";
-import { helperNameMap, TO_DISPLAY_STRING } from "./runtimeHelpers";
+import { CREATE_ELEMENT_VNODE, helperNameMap, TO_DISPLAY_STRING } from "./runtimeHelpers";
 
 export function generate(ast) {
     const context = createCodegenContext();
@@ -11,6 +12,7 @@ export function generate(ast) {
     const signature = args.join(", ")
     push(`function ${functionName}(${signature}) {`);
     const node = ast.codegenNode;
+    push("return ");
     genNode(node, context)
     push("}")
     return {
@@ -41,13 +43,67 @@ function genNode(node, context) {
         case NodeTypes.SIMPLE_EXPRESSION:
             genExpression(node, context);
             break;
+        case NodeTypes.ELEMENT:
+            genElement(node, context)
+            break;
+        case NodeTypes.COMPOUND_EXPRESSION:
+            genCompoundExpression(node, context);
+            break;
+        default:
+            break;
     }
+}
+
+function genCompoundExpression(node, context) {
+    const { push } = context;
+    const { children } = node;
+    for (let i = 0, len = children.length; i < len; i++) {
+        const child = children[i];
+        if (isString(child)) {
+            push(child);
+        } else {
+            genNode(child, context);
+        }
+        // const child = children[i];
+    }
+}
+
+// 处理元素类型
+function genElement(node, context) {
+    const { push, helper } = context;
+    const { tag, children, props } = node;
+    push(`${helper(CREATE_ELEMENT_VNODE)}(`);
+    // genNode(children, context);
+    genNodeList(genNullable([tag, props, children]), context)
+    push(')');
+}
+
+function genNodeList(nodes, context) {
+    const { push } = context;
+    for (let i = 0, len = nodes.length; i < len; i++) {
+        const node = nodes[i];
+        if (isString(node)) {
+            push(`${node}`);
+        } else {
+            genNode(node, context);
+        }
+        // node 和 node 之间需要加上 逗号(,)
+        // 但是最后一个不需要 "div", [props], [children]
+        if (i < len - 1) {
+            push(", ");
+        } 
+    }
+}
+
+// 处理undefined 为null
+function genNullable(args) {
+    return args.map(arg => arg || 'null');
 }
 
 // 处理 hi
 function genText(node, context) {
     const { push } = context;
-    push(`return '${node.content}'`);
+    push(`'${node.content}'`);
 }
 
 // 处理  {{ message }} 类型

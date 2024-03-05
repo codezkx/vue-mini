@@ -13,9 +13,14 @@ export function transform(root, options = {}) {
 function traverseNode(node: any, context) {
     // 执行外部传入进来的回调函数(这里的用法也叫插件)
     const nodeTransforms = context.nodeTransforms;
+    // 收集插件的函数  先进入后执行, 数组最后的先执行.
+    const exitFns: any = [];
     for (let i = 0, len = nodeTransforms.length; i < len; i++) {
         const plugin = nodeTransforms[i];
-        plugin && plugin(node);
+        const exitFn = plugin(node, context);
+        if (exitFn) {
+            exitFns.push(exitFn);
+        }
     }
     switch(node.type) {
         case NodeTypes.INTERPOLATION:
@@ -25,9 +30,14 @@ function traverseNode(node: any, context) {
         case NodeTypes.ELEMENT:
             traverseChildren(node, context);
             break;
-        
         default:
             break;
+    }
+
+    let i = exitFns.length;
+    while (i--) {
+        // 执行插件函数
+        exitFns[i]();
     }
 }
 
@@ -52,6 +62,12 @@ function createTransformContext(root: any, options: any) {
 }
 
 function createRootCodegen(root) {
-    root.codegenNode = root.children[0];
+    const child = root.children[0];
+    if (child.type === NodeTypes.ELEMENT) {
+        // 获取transformElement中的vnodeElement对象
+        root.codegenNode = child.codegenNode;
+    } else {
+        root.codegenNode = child
+    }
 }
 
