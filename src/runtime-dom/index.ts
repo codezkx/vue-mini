@@ -47,4 +47,4 @@ export const createApp = (...args) => {
   return renderer.createApp(...args);
 };
 
-export * from "@/runtime-core";
+export * from "../runtime-core";

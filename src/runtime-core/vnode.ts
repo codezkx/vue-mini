@@ -4,6 +4,8 @@ import { ShapeFlags } from "@/shared";
 export const Text = Symbol("Text"); // 纯文本节点
 export const Fragment = Symbol("Fragment"); // 只渲染children
 
+export { createVNode as createElementVNode };
+
 /**
  * @param type Object | string
  * @param props 节点属性

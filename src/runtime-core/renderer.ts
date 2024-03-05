@@ -131,7 +131,7 @@ export function createRenderer(options) {
       if (!instance.isMounted) {
         const { proxy } = instance;
         // 把代理对象绑定到render中; 缓存上一次的subTree
-        const subTree = (instance.subTree = instance.render.call(proxy));
+        const subTree = (instance.subTree = instance.render.call(proxy, proxy));
         // 把父级实例传入到渲染过程中 主要实现provide/inject功能
         patch(null, subTree, container, instance, anchor);
         // 获取当前的组件实例根节点
@@ -147,12 +147,11 @@ export function createRenderer(options) {
 
         const { proxy } = instance;
         // 把代理对象绑定到render中
-        const subTree = instance.render.call(proxy);
-        const prevSubTree = instance.subTree; // 获取之前的subTree
+        const subTree = instance.render.call(proxy, proxy);
+        const prevSubTree = instance.subTree; // 获取p之前的subTree
         // 更新subTree
         instance.subTree = subTree;
         // // 把父级实例传入到渲染过程中 主要实现provide/inject功能
-        console.log("update shitu")
         patch(prevSubTree, subTree, container, instance, anchor);
         // // 获取当前的组件实例根节点
         // vnode.el = subTree.el;
