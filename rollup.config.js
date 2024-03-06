@@ -5,17 +5,16 @@ import typescript from "@rollup/plugin-typescript";
 
 // import replace from "@rollup/plugin-replace";
 
-import pkg from "./package.json" assert { type: "json" };
 export default {
-  input: "./src/index.ts",
+  input: "./packages/vue/src/index.ts",
   output: [
     {
       format: "cjs",
-      file: pkg.main,
+      file: "./packages/vue/dist/mini-vue.cjs.js",
     },
     {
       format: "es",
-      file: pkg.module,
+      file: "./packages/vue/dist/mini-vue.esm-bundler.js",
     },
   ],
   plugins: [
