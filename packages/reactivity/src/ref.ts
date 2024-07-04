@@ -5,7 +5,8 @@ import { reactive } from "./reactive";
 /* 
   1、proxy 只针对对象类型 基础类型不进行代理
   2、那ref需要进行对象包括（针对基础类型）
-  3、利用对应的get set 方法触发依赖的收集与触发
+  3、利用对应的get set 方法触发依赖的收集与触发  
+   implement
 */
 class RefImpl {
   private _value: any;

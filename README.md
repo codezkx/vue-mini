@@ -35,6 +35,37 @@ module.exports = {
   ],
 };
 ````
+## Vue响应式核心
+
+### reactive
+
+
+
+### ref
+
+- 思想
+
+  > 利用class中的get/set 属性来对ref中的基础类型值进行监听, 如果是对象则利用reactive来进行proxy代理对应对象
+
+- 过程
+
+  1. 如果ref是一个基础类型, 则直接利用class的getter/setter方法监听对应的值变化
+  2. 如果ref是一个对象, 则在实例化RefImpl类是进行proxy代理
+
+#### isRef
+
+- 思想
+
+  > 利用RefImpl设置的属性__v_isRef来判断是否为ref
+
+#### unref
+
+- 思想
+
+  > 利用你isRef判断是否为ref如果是返回ref.value不是返回原值, 值的注意的是如果ref是一个对象那么使用unref后只是把它改变成不是ref的对象, 但是这个对象还是reactive对象。在初始化时进行操作的.
+
+
+
 ## 双端对比
 
 ### 1、左则对比（确定i的值）

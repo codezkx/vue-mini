@@ -4,6 +4,7 @@ import { vi } from "vitest";
 describe("readonly", () => {
   it("happy path", () => {
     const original = { foo: 1, bar: { baz: 2 } };
+    debugger
     const wrapped = readonly(original);
     expect(wrapped).not.toBe(original);
     expect(wrapped.foo).toBe(1);

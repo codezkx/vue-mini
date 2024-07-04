@@ -65,15 +65,15 @@ export function track(target, key) {
     // 2.1、为空则初始化Map
     depsMap = new Map(); // 第一次执行时没有对应的key value 则初始化
     // 2.2、存储对应的Map
-    targetMap.set(target, depsMap);
+    targetMap.set(target, depsMap);  // Map({} => Map())
   }
-  // 3、利用key取出对应的Set
-  let dep = depsMap.get(key); // 取出 dep的 Set
+  // 3、利用key取出对应的Set  dep =>  Set(key){activeEffect}
+  let dep = depsMap.get(key); // 取出 dep的 Set  
   // 4、判断Set是否为空
   if (!dep) {
     // 4.1、如果为空初始化Set
     dep = new Set();
-    // 4.2、存储对应的Set
+    // 4.2、存储对应的Set  Map(target => Map(key => Set))
     depsMap.set(key, dep);
   }
   trackEffects(dep);
@@ -81,7 +81,7 @@ export function track(target, key) {
 
 export function trackEffects(dep) {
   if (dep.has(activeEffect)) return;
-  // 5、把当前的effect 添加到 dep中
+  // 5、把当前的effect 添加到 dep中  Map(target => Map(key => Set(key){activeEffect}))
   dep.add(activeEffect); // 这里连接收集依赖和触发依赖的关系
   // 6、实现stop 的清空依赖功能
   activeEffect.deps.push(dep);
@@ -92,14 +92,16 @@ export function isTracking() {
   return activeEffect !== undefined && shouldTrack;
 }
 
+// 触发依赖
 export function trigger(target, key) {
-  // 核心点是如何触发依赖更新 执行ReactiveEffect类中的run 方法
-  const depsMap = targetMap.get(target);
-  const deps = depsMap.get(key);
+  // 核心点是如何触发依赖更新 执行ReactiveEffect类中的run 方法  targetMap => Map(target => Map(key => Set(key){activeEffect}))
+  const depsMap = targetMap.get(target); //  Map(target => Map(key => Set(key){activeEffect})
+  const deps = depsMap.get(key); // Set(key){activeEffect}
   triggerEffects(deps);
 }
 
 export function triggerEffects(deps) {
+  // 便利ReactiveEffect
   for (let dep of deps) {
     if (dep.scheduler) {
       dep.scheduler();
@@ -115,6 +117,7 @@ export function effect(fn, options: any = {}) {
   const _effect = new ReactiveEffect(fn, options.scheduler);
   _effect.run();
   extend(_effect, options);
+  // 将当前实力指向run方法
   const runner: any = _effect.run.bind(_effect);
   // JS中函数本质也是一个对象
   runner.effect = _effect;
