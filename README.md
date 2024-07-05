@@ -64,7 +64,11 @@ module.exports = {
 
   > 利用你isRef判断是否为ref如果是返回ref.value不是返回原值, 值的注意的是如果ref是一个对象那么使用unref后只是把它改变成不是ref的对象, 但是这个对象还是reactive对象。在初始化时进行操作的.
 
+### computed
 
+- 思想
+
+  > 传入一个函数getter,  然后实例化ReactiveEffect并传入第二个参数使用来初始化dirty属性(判断是否需要更新值), 当读取计算属性时会触发effect.run()方法也就是执行getter. 这个期间会对响应式属性进行响应式依赖收集, 并获取返回值.
 
 ## 双端对比
 
