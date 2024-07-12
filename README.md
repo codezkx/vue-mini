@@ -69,6 +69,11 @@ module.exports = {
 - 思想
 
   > 传入一个函数getter,  然后实例化ReactiveEffect并传入第二个参数使用来初始化dirty属性(判断是否需要更新值), 当读取计算属性时会触发effect.run()方法也就是执行getter. 这个期间会对响应式属性进行响应式依赖收集, 并获取返回值.
+  
+
+### watchEffect
+
+
 
 ## 双端对比
 

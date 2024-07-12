@@ -3,7 +3,7 @@ let isFlushPending = false
 const resolvedPromise = /*#__PURE__*/ Promise.resolve() as Promise<any>
 
 
-export function nextTick(fn) {
+export function nextTick(fn?) {
     // 返回一个微任务 使其在同步代码后执行
     return fn ? resolvedPromise.then(fn) : resolvedPromise;
 }
