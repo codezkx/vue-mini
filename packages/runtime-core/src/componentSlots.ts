@@ -20,7 +20,7 @@ import { isArray, isFunction, ShapeFlags } from "@mini-vue/shared";
 
 export function initSlots(instance, children) {
   const { vnode } = instance;
-  if (vnode.shapeFlag && ShapeFlags.SLOTS_CHILDREN) {
+  if (vnode.shapeFlag & ShapeFlags.SLOTS_CHILDREN) {
     normalizeObjectSlots(children, instance.slots);
   }
 }

@@ -13,7 +13,7 @@ describe("api: watch", () => {
         expect(dummy).toBe(0);
     
         state.count++;
-        await nextTick();
+        // await nextTick();
         expect(dummy).toBe(1);
     })
 })

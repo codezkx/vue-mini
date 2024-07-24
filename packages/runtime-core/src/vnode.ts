@@ -7,7 +7,7 @@ export const Fragment = Symbol("Fragment"); // 只渲染children
 export { createVNode as createElementVNode };
 
 /**
- * @param type Object | string
+ * @param type Object | string: 节点对象或者文本 
  * @param props 节点属性
  * @param children 子节点
  * @description 创建一个虚拟节点   后面两个参数是在h函数调用时
@@ -40,6 +40,14 @@ export function createVNode(type, props?, children?) {
 
 export function createTextVNode(text: string) {
   return createVNode(Text, {}, text);
+}
+
+export function normalizeVNnode(child) {
+  if (typeof child === "number" || typeof child === "string") {
+    return createVNode(Text, null, String(child));
+  } else {
+    return child;
+  }
 }
 
 function getShapeFlag(type) {

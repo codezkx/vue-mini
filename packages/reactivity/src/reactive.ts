@@ -22,6 +22,10 @@ export function isReadonly(row) {
   return !!row?.[ReactiveFlags.IS_READONLY];
 }
 
+export function isShallow(value: unknown): boolean {
+  return !!(value && value [ReactiveFlags.IS_SHALLOW])
+}
+
 export function shallowReadonly(row) {
   return createActiveObject(row, shallowReadonlyHhandlers);
 }

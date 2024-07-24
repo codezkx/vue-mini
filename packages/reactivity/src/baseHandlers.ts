@@ -21,6 +21,8 @@ function createGetter(isReadonly = false, isShallow = false) {
       return !isReadonly;
     } else if (key === ReactiveFlags.IS_READONLY) {
       return isReadonly;
+    } else if (key === ReactiveFlags.IS_SHALLOW) {
+      return isShallow
     }
     // 收集依赖
     if (!isReadonly) {

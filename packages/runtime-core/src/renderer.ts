@@ -1,7 +1,7 @@
 import { EMPTY_OBJ, ShapeFlags } from "@mini-vue/shared";
 import { effect } from "@mini-vue/reactivity";
 import { createComponentInstance, setupComponent } from "./component";
-import { Fragment, Text } from "./vnode";
+import { Fragment, Text, normalizeVNnode } from "./vnode";
 import { createAppAPI } from "./createApp";
 import { shouldUpdateComponent } from "./componentRenderUtils";
 import { queueJob } from "./scheduler";
@@ -19,7 +19,7 @@ export function createRenderer(options) {
   /**
    * @param vnode 节点
    * @param container App组件实例
-   *
+   * @description  container为root时是 #app
    */
   function render(vnode, container) {
     patch(null, vnode, container, null, null);
@@ -42,8 +42,10 @@ export function createRenderer(options) {
         break;
       default:
         if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
+          console.log("处理 component");
           processComponent(n1, n2, container, parentComponent, anchor);
         } else if (shapeFlag & ShapeFlags.ELEMENT) {
+          console.log("处理 element");
           proceessElement(n1, n2, container, parentComponent, anchor);
         }
         break;
@@ -68,6 +70,7 @@ export function createRenderer(options) {
    * **/
   function processComponent(n1, n2, container, parentComponent, anchor) {
     if (!n1) {
+      // 挂在组件
       mountComponent(n2, container, parentComponent, anchor);
     } else {
       updateComponent(n1, n2, container, parentComponent, anchor);
@@ -79,6 +82,7 @@ export function createRenderer(options) {
       initialVNode,
       parentComponent
     ));
+    console.log(`创建组件实例:${instance.type.name}`);
     // 初始组件属性
     setupComponent(instance);
     // 处理render函数
@@ -126,42 +130,58 @@ export function createRenderer(options) {
     parentComponent,
     anchor
   ) {
-    instance.update = effect(() => 
-    {
-      if (!instance.isMounted) {
-        const { proxy } = instance;
-        // 把代理对象绑定到render中; 缓存上一次的subTree
-        const subTree = (instance.subTree = instance.render.call(proxy, proxy));
-        // 把父级实例传入到渲染过程中 主要实现provide/inject功能
-        patch(null, subTree, container, instance, anchor);
-        // 获取当前的组件实例根节点
-        vnode.el = subTree.el;
-        instance.isMounted = true;
-      } else {
-        // 更新组件的Props
-        const { next, vnode } = instance
-        if (next) {
-          next.el = vnode.el;
-          updateComponentPreRender(instance, next)
-        }
+    // 调用 render
+    // 应该传入 ctx 也就是 proxy
+    // ctx 可以选择暴露给用户的 api
+    // 源代码里面是调用的 renderComponentRoot 函数
+    // 这里为了简化直接调用 render
 
-        const { proxy } = instance;
-        // 把代理对象绑定到render中
-        const subTree = instance.render.call(proxy, proxy);
-        const prevSubTree = instance.subTree; // 获取p之前的subTree
-        // 更新subTree
-        instance.subTree = subTree;
-        // // 把父级实例传入到渲染过程中 主要实现provide/inject功能
-        patch(prevSubTree, subTree, container, instance, anchor);
-        // // 获取当前的组件实例根节点
-        // vnode.el = subTree.el;
+    // obj.name  = "111"
+    // obj.name = "2222"
+    // 从哪里做一些事
+    // 收集数据改变之后要做的事 (函数)
+    // 依赖收集   effect 函数
+    // 触发依赖
+    instance.update = effect(() => 
+      {
+        // 
+        if (!instance.isMounted) {
+          console.log(`${instance.type.name}:调用 render,获取 subTree`);
+          // proxy 是代理instance对象
+          const { proxy } = instance;
+          // 把代理对象绑定到render中; 缓存上一次的subTree   可在 render 函数中通过 this 来使用 proxy
+          const subTree = (instance.subTree = normalizeVNnode(instance.render.call(proxy, proxy)));
+          // 把父级实例传入到渲染过程中 主要实现provide/inject功能
+          patch(null, subTree, container, instance, anchor);
+          // 获取当前的组件实例根节点
+          vnode.el = subTree.el;
+          instance.isMounted = true;
+        } else {
+          // 更新组件的Props
+          const { next, vnode } = instance
+          if (next) {
+            next.el = vnode.el;
+            updateComponentPreRender(instance, next)
+          }
+
+          const { proxy } = instance;
+          // 把代理对象绑定到render中
+          const subTree = instance.render.call(proxy, proxy);
+          const prevSubTree = instance.subTree; // 获取p之前的subTree
+          // 更新subTree
+          instance.subTree = subTree;
+          // // 把父级实例传入到渲染过程中 主要实现provide/inject功能
+          patch(prevSubTree, subTree, container, instance, anchor);
+          // // 获取当前的组件实例根节点
+          // vnode.el = subTree.el;
+        }
+      }, 
+      {
+        scheduler() {
+          queueJob(instance.update)
+        }
       }
-    }, 
-    {
-      scheduler() {
-        queueJob(instance.update)
-      }
-    });
+    );
   }
 
   /*
@@ -486,7 +506,7 @@ export function createRenderer(options) {
   }
 
   return {
-    createApp: createAppAPI(render),
+    createApp: createAppAPI(render), // 返回一个函数
   };
 }
 

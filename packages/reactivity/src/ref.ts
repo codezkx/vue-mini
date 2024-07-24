@@ -1,6 +1,6 @@
 import { hasChanged, isObject } from "@mini-vue/shared";
 import { isTracking, trackEffects, triggerEffects } from "./effect";
-import { reactive } from "./reactive";
+import { isReactive, reactive } from "./reactive";
 
 /* 
   1、proxy 只针对对象类型 基础类型不进行代理
@@ -61,6 +61,19 @@ export function unRef(value) {
   return isRef(value) ? value.value : value;
 }
 
+const shallowUnwrapHandlers: ProxyHandler<any> = {
+  get: (target, key, receiver) => unRef(Reflect.get(target, key, receiver)),
+  set: (target, key, value, receiver) => {
+    const oldValue = target[key]
+    if (isRef(oldValue) && !isRef(value)) {
+      oldValue.value = value
+      return true
+    } else {
+      return Reflect.set(target, key, value, receiver)
+    }
+  },
+}
+
 // 实现在模板访问ref时不需要.value 此方法就是解构的方法
 export function proxyRefs(objectWithRefs) {
   /* 
@@ -68,22 +81,5 @@ export function proxyRefs(objectWithRefs) {
       因为需要在获取和设置时需要触发get 和 set  又因为objectWithRefs是对象
       所以使用proxy  （如果不是对象需要特别处理， 这里就不做处理了）
   */
-  return new Proxy(objectWithRefs, {
-    get(target, key) {
-      return unRef(Reflect.get(target, key));
-    },
-
-    set(target, key, value) {
-      const oldValue = target[key];
-      if (isRef(oldValue) && !isRef(value)) {
-        return (target[key].value = value);
-      } else {
-        /* 
-          a.value= o // 此步骤省略   不是ref时也成立
-          a = o // 操作相当于下面
-        */
-        return Reflect.set(target, key, value);
-      }
-    },
-  });
+  return isReactive(objectWithRefs) ? objectWithRefs : new Proxy(objectWithRefs, shallowUnwrapHandlers);
 }

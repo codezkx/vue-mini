@@ -29,31 +29,54 @@ export function createComponentInstance(vnode, parent) {
 export function setupComponent(instance) {
   initProps(instance, instance.vnode.props);
   initSlots(instance, instance.vnode.children);
+  // 源码里面有两种类型的 component
+  // 一种是基于 options 创建的
+  // 还有一种是 function 的
+  // 这里处理的是 options 创建的
+  // 叫做 stateful 类型
   setupStatefulComponent(instance);
 }
 
 // 获取setup返回值
 export function setupStatefulComponent(instance) {
-  const Component = instance.type;
-  // 创建一个代理对象
+  // todo
+  // 1. 先创建代理 proxy
+  console.log("创建 proxy");
+
+  // proxy 对象其实是代理了 instance.ctx 对象
+  // 我们在使用的时候需要使用 instance.proxy 对象
+  // 因为 instance.ctx 在 prod 和 dev 坏境下是不同的
   instance.proxy = new Proxy({ _: instance }, PublicInstanceProxyHandlers);
+  const Component = instance.type;
   const { setup } = Component;
   if (setup) {
     // 在setup之前赋值
     setCurrentInstance(instance);
+    const setupContext = createSetupContext(instance);
     /**
-     * @description 注意这里可能返回一个函数或者一个对象
+     * @description 注意这里可能返回一个函数或者一个对象   真实的处理场景里面应该是只在 dev 环境才会把 props 设置为只读的
      * @returns {
      *    function: 是一个渲染函数（render）
      *    Object：需要把此对象注入到instance的上下文中不然rander函数不能通过this访问到setup中返回的数据
      * }
      */
-    const setupResult = setup(shallowReadonly(instance.props), {
-      emit: instance.emit,
-    });
+    const setupResult = setup(shallowReadonly(instance.props), setupContext);
     setCurrentInstance(null);
+    // 3. 处理 setupResult
     handleSetupResult(instance, setupResult);
+  } else {
+    finishComponentSetup(instance);
   }
+}
+
+function createSetupContext(instance) {
+  console.log("初始化 setup context");
+  return {
+    attrs: instance.attrs,
+    slots: instance.slots,
+    emit: instance.emit,
+    expose: () => {}, // TODO 实现 expose 函数逻辑
+  };
 }
 
 // 处理setup中返回的类型 function(就是渲染函数) | object（需要通过渲染函数）
@@ -81,8 +104,12 @@ function handleSetupResult(instance, setupResult) {
 
 // 确保实例对象上有render函数
 function finishComponentSetup(instance) {
-  const Component = instance.type;
+  // 给 instance 设置 render
+
+  // 先取到用户设置的 component options
+  const Component = instance.type; // type 时间实例
   if (!instance.render) {
+    // 如果 compile 有值 并且当组件没有 render 函数，那么就需要把 template 编译成 render 函数
     if (compiler && !Component.render) {
       if (Component.template) {
         Component.render = compiler(Component.template);

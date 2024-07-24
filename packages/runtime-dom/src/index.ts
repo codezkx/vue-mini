@@ -44,7 +44,7 @@ const renderer: any = createRenderer({
 });
 
 export const createApp = (...args) => {
-  return renderer.createApp(...args);
+  return renderer.createApp(...args); // 返回 对象 {mount(rootContainer){}}
 };
 
 export * from "@mini-vue/runtime-core";

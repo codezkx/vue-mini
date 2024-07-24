@@ -85,15 +85,15 @@ function track(target, key) {
         // 2.1、为空则初始化Map
         depsMap = new Map(); // 第一次执行时没有对应的key value 则初始化
         // 2.2、存储对应的Map
-        targetMap.set(target, depsMap);
+        targetMap.set(target, depsMap); // Map({} => Map())
     }
-    // 3、利用key取出对应的Set
-    let dep = depsMap.get(key); // 取出 dep的 Set
+    // 3、利用key取出对应的Set  dep =>  Set(key){activeEffect}
+    let dep = depsMap.get(key); // 取出 dep的 Set  
     // 4、判断Set是否为空
     if (!dep) {
         // 4.1、如果为空初始化Set
         dep = new Set();
-        // 4.2、存储对应的Set
+        // 4.2、存储对应的Set  Map(target => Map(key => Set))
         depsMap.set(key, dep);
     }
     trackEffects(dep);
@@ -101,7 +101,7 @@ function track(target, key) {
 function trackEffects(dep) {
     if (dep.has(activeEffect))
         return;
-    // 5、把当前的effect 添加到 dep中
+    // 5、把当前的effect 添加到 dep中  Map(target => Map(key => Set(key){activeEffect}))
     dep.add(activeEffect); // 这里连接收集依赖和触发依赖的关系
     // 6、实现stop 的清空依赖功能
     activeEffect.deps.push(dep);
@@ -110,13 +110,15 @@ function isTracking() {
     // shouldTrack 是处理a++此等情况的（同时触发get 和 set）
     return activeEffect !== undefined && shouldTrack;
 }
+// 触发依赖
 function trigger(target, key) {
-    // 核心点是如何触发依赖更新 执行ReactiveEffect类中的run 方法
-    const depsMap = targetMap.get(target);
-    const deps = depsMap.get(key);
+    // 核心点是如何触发依赖更新 执行ReactiveEffect类中的run 方法  targetMap => Map(target => Map(key => Set(key){activeEffect}))
+    const depsMap = targetMap.get(target); //  Map(target => Map(key => Set(key){activeEffect})
+    const deps = depsMap.get(key); // Set(key){activeEffect}
     triggerEffects(deps);
 }
 function triggerEffects(deps) {
+    // 便利ReactiveEffect
     for (let dep of deps) {
         if (dep.scheduler) {
             dep.scheduler();
@@ -132,10 +134,15 @@ function effect(fn, options = {}) {
     const _effect = new ReactiveEffect(fn, options.scheduler);
     _effect.run();
     extend(_effect, options);
+    // 将当前实力指向run方法
     const runner = _effect.run.bind(_effect);
     // JS中函数本质也是一个对象
     runner.effect = _effect;
     return runner;
+}
+function stop(runner) {
+    // 删除 effect 对应的fn实例
+    runner.effect.stop();
 }
 
 var ReactiveFlags;
@@ -163,6 +170,9 @@ function createGetter(isReadonly = false, isShallow = false) {
         }
         else if (key === ReactiveFlags.IS_READONLY) {
             return isReadonly;
+        }
+        else if (key === ReactiveFlags.IS_SHALLOW) {
+            return isShallow;
         }
         // 收集依赖
         if (!isReadonly) {
@@ -232,6 +242,7 @@ function createActiveObject(target, baseHandlers) {
   1、proxy 只针对对象类型 基础类型不进行代理
   2、那ref需要进行对象包括（针对基础类型）
   3、利用对应的get set 方法触发依赖的收集与触发
+   implement
 */
 class RefImpl {
     constructor(value) {
@@ -379,7 +390,7 @@ function emit(instance, event, ...args) {
 */
 function initSlots(instance, children) {
     const { vnode } = instance;
-    if (vnode.shapeFlag && 32 /* ShapeFlags.SLOTS_CHILDREN */) {
+    if (vnode.shapeFlag & 32 /* ShapeFlags.SLOTS_CHILDREN */) {
         normalizeObjectSlots(children, instance.slots);
     }
 }
@@ -397,6 +408,13 @@ function normalizeSlotValue(value) {
 }
 
 function initProps(instance, rawProps) {
+    console.log("initProps");
+    // TODO
+    // 应该还有 attrs 的概念
+    // attrs
+    // 如果组件声明了 props 的话，那么才可以进入 props 属性内
+    // 不然的话是需要存储在 attrs 内
+    // 这里暂时直接赋值给 instance.props 即可
     instance.props = rawProps || {};
 }
 
@@ -423,30 +441,49 @@ function createComponentInstance(vnode, parent) {
 function setupComponent(instance) {
     initProps(instance, instance.vnode.props);
     initSlots(instance, instance.vnode.children);
+    // 源码里面有两种类型的 component
+    // 一种是基于 options 创建的
+    // 还有一种是 function 的
+    // 这里处理的是 options 创建的
+    // 叫做 stateful 类型
     setupStatefulComponent(instance);
 }
 // 获取setup返回值
 function setupStatefulComponent(instance) {
-    const Component = instance.type;
-    // 创建一个代理对象
+    // todo
+    // 1. 先创建代理 proxy
+    console.log("创建 proxy");
+    // proxy 对象其实是代理了 instance.ctx 对象
+    // 我们在使用的时候需要使用 instance.proxy 对象
+    // 因为 instance.ctx 在 prod 和 dev 坏境下是不同的
     instance.proxy = new Proxy({ _: instance }, PublicInstanceProxyHandlers);
+    const Component = instance.type;
     const { setup } = Component;
     if (setup) {
         // 在setup之前赋值
         setCurrentInstance(instance);
+        const setupContext = createSetupContext(instance);
         /**
-         * @description 注意这里可能返回一个函数或者一个对象
+         * @description 注意这里可能返回一个函数或者一个对象   真实的处理场景里面应该是只在 dev 环境才会把 props 设置为只读的
          * @returns {
          *    function: 是一个渲染函数（render）
          *    Object：需要把此对象注入到instance的上下文中不然rander函数不能通过this访问到setup中返回的数据
          * }
          */
-        const setupResult = setup(shallowReadonly(instance.props), {
-            emit: instance.emit,
-        });
+        const setupResult = setup(shallowReadonly(instance.props), setupContext);
         setCurrentInstance(null);
+        // 3. 处理 setupResult
         handleSetupResult(instance, setupResult);
     }
+}
+function createSetupContext(instance) {
+    console.log("初始化 setup context");
+    return {
+        attrs: instance.attrs,
+        slots: instance.slots,
+        emit: instance.emit,
+        expose: () => { }, // TODO 实现 expose 函数逻辑
+    };
 }
 // 处理setup中返回的类型 function(就是渲染函数) | object（需要通过渲染函数）
 function handleSetupResult(instance, setupResult) {
@@ -500,7 +537,7 @@ function registerRuntimeCompiler(_compiler) {
 const Text = Symbol("Text"); // 纯文本节点
 const Fragment = Symbol("Fragment"); // 只渲染children
 /**
- * @param type Object | string
+ * @param type Object | string: 节点对象或者文本
  * @param props 节点属性
  * @param children 子节点
  * @description 创建一个虚拟节点   后面两个参数是在h函数调用时
@@ -545,9 +582,8 @@ function createAppAPI(render) {
         return {
             // 初始化
             mount(rootContainer) {
-                // vue创建虚拟节点（对应虚拟DOM）
-                const vnode = createVNode(rootComponent);
-                render(vnode, rootContainer);
+                const vnode = createVNode(rootComponent); // 根据rootComponent创建虚拟节点（对应虚拟DOM）
+                render(vnode, rootContainer); // 挂载根组件
             },
         };
     };
@@ -596,6 +632,7 @@ function hasPropsChanged(prevProps, nextProps) {
 const queue = [];
 let isFlushPending = false;
 const resolvedPromise = /*#__PURE__*/ Promise.resolve();
+const activePreFlushCbs = [];
 function nextTick(fn) {
     // 返回一个微任务 使其在同步代码后执行
     return fn ? resolvedPromise.then(fn) : resolvedPromise;
@@ -611,17 +648,33 @@ function queueJob(job) {
     queueFlush();
 }
 function queueFlush() {
+    // 如果同时触发了两个组件的更新的话
+    // 这里就会触发两次 then （微任务逻辑）
+    // 但是着是没有必要的
+    // 我们只需要触发一次即可处理完所有的 job 调用
+    // 所以需要判断一下 如果已经触发过 nextTick 了
+    // 那么后面就不需要再次触发一次 nextTick 逻辑了
     if (isFlushPending)
         return;
     isFlushPending = true;
     nextTick(flushJobs);
 }
 function flushJobs() {
-    let job;
     isFlushPending = false;
+    // 先执行 pre 类型的 job
+    // 所以这里执行的job 是在渲染前的
+    // 也就意味着执行这里的 job 的时候 页面还没有渲染
+    flushPreFlushCbs();
+    let job;
     while ((job = queue.shift())) {
         console.log(job);
         job && job();
+    }
+}
+function flushPreFlushCbs() {
+    // 执行所有的 pre 类型的 job
+    for (let i = 0; i < activePreFlushCbs.length; i++) {
+        activePreFlushCbs[i]();
     }
 }
 
@@ -631,7 +684,7 @@ function createRenderer(options) {
     /**
      * @param vnode 节点
      * @param container App组件实例
-     *
+     * @description  container为root时是 #app
      */
     function render(vnode, container) {
         patch(null, vnode, container, null, null);
@@ -652,9 +705,11 @@ function createRenderer(options) {
                 break;
             default:
                 if (shapeFlag & 4 /* ShapeFlags.STATEFUL_COMPONENT */) {
+                    console.log("处理 component");
                     processComponent(n1, n2, container, parentComponent, anchor);
                 }
                 else if (shapeFlag & 1 /* ShapeFlags.ELEMENT */) {
+                    console.log("处理 element");
                     proceessElement(n1, n2, container, parentComponent, anchor);
                 }
                 break;
@@ -676,6 +731,7 @@ function createRenderer(options) {
      * **/
     function processComponent(n1, n2, container, parentComponent, anchor) {
         if (!n1) {
+            // 挂在组件
             mountComponent(n2, container, parentComponent, anchor);
         }
         else {
@@ -684,6 +740,7 @@ function createRenderer(options) {
     }
     function mountComponent(initialVNode, container, parentComponent, anchor) {
         const instance = (initialVNode.component = createComponentInstance(initialVNode, parentComponent));
+        console.log(`创建组件实例:${instance.type.name}`);
         // 初始组件属性
         setupComponent(instance);
         // 处理render函数
@@ -719,6 +776,7 @@ function createRenderer(options) {
     }
     function setupRenderEffect(instance, vnode, container, parentComponent, anchor) {
         instance.update = effect(() => {
+            // 
             if (!instance.isMounted) {
                 const { proxy } = instance;
                 // 把代理对象绑定到render中; 缓存上一次的subTree
@@ -1063,7 +1121,7 @@ function createRenderer(options) {
         });
     }
     return {
-        createApp: createAppAPI(render),
+        createApp: createAppAPI(render), // 返回一个函数
     };
 }
 function updateComponentPreRender(instance, nextNVode) {
@@ -1210,11 +1268,12 @@ const renderer = createRenderer({
     setElementText,
 });
 const createApp = (...args) => {
-    return renderer.createApp(...args);
+    return renderer.createApp(...args); // 返回 对象 {mount(rootContainer){}}
 };
 
 var runtimeDom = /*#__PURE__*/Object.freeze({
     __proto__: null,
+    ReactiveEffect: ReactiveEffect,
     computed: computed,
     createApp: createApp,
     createAppAPI: createAppAPI,
@@ -1238,6 +1297,7 @@ var runtimeDom = /*#__PURE__*/Object.freeze({
     registerRuntimeCompiler: registerRuntimeCompiler,
     renderSlots: renderSlots,
     shallowReadonly: shallowReadonly,
+    stop: stop,
     toDisplayString: toDisplayString,
     unRef: unRef
 });
@@ -1696,4 +1756,4 @@ function compilerToFunction(template) {
 }
 registerRuntimeCompiler(compilerToFunction);
 
-export { computed, createApp, createAppAPI, createVNode as createElementVNode, createRenderer, createTextVNode, effect, getCurrentInstance, h, inject, isProxy, isReactive, isReadonly, isRef, nextTick, provide, proxyRefs, reactive, readonly, ref, registerRuntimeCompiler, renderSlots, shallowReadonly, toDisplayString, unRef };
+export { ReactiveEffect, computed, createApp, createAppAPI, createVNode as createElementVNode, createRenderer, createTextVNode, effect, getCurrentInstance, h, inject, isProxy, isReactive, isReadonly, isRef, nextTick, provide, proxyRefs, reactive, readonly, ref, registerRuntimeCompiler, renderSlots, shallowReadonly, stop, toDisplayString, unRef };
