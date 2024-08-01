@@ -46,7 +46,7 @@ export function createRenderer(options) {
           processComponent(n1, n2, container, parentComponent, anchor);
         } else if (shapeFlag & ShapeFlags.ELEMENT) {
           console.log("处理 element");
-          proceessElement(n1, n2, container, parentComponent, anchor);
+          processElement(n1, n2, container, parentComponent, anchor);
         }
         break;
     }
@@ -83,7 +83,7 @@ export function createRenderer(options) {
       parentComponent
     ));
     console.log(`创建组件实例:${instance.type.name}`);
-    // 初始组件属性
+    // 初始组件属性  Props/slots/render 
     setupComponent(instance);
     // 处理render函数
     setupRenderEffect(
@@ -191,7 +191,7 @@ export function createRenderer(options) {
         2、需要获取上一次更新的subTree和当前的subTree进行递归对比
 
   */
-  function proceessElement(
+  function processElement(
     n1,
     n2: any,
     container: any,
@@ -235,6 +235,10 @@ export function createRenderer(options) {
   function patchElement(n1, n2, container, parentComponent, anchor) {
     const odlProps = n1.props || EMPTY_OBJ;
     const newProps = n2.props || EMPTY_OBJ;
+    // 应该更新 element
+    console.log("应该更新 element");
+    console.log("旧的 vnode", n1);
+    console.log("新的 vnode", n2);
     // 更新n2 el
     const el = (n2.el = n1.el);
     patchProps(el, odlProps, newProps);
