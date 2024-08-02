@@ -104,9 +104,13 @@ export function createRenderer(options) {
    * 
   */
   function updateComponent(n1, n2, container, parentComponent, anchor) {
+    console.log("更新组件", n1, n2);
+    
     // n2可能时没有component需要初始化
     const instance = (n2.component = n1.component);
     if (shouldUpdateComponent(n1, n2)) {
+      console.log(`组件需要更新: ${instance}`);
+
       // 那么 next 就是新的 vnode 了（也就是 n2）
       instance.next = n2 // 引用之前的虚拟节点
       // 这里的 update 是在 setupRenderEffect 里面初始化的，update 函数除了当内部的响应式对象发生改变的时候会调用
@@ -117,6 +121,7 @@ export function createRenderer(options) {
       // TODO 需要在 update 中处理支持 next 的逻辑
       instance.update()
     } else {
+      console.log(`组件不需要更新: ${instance}`);
       // 不需要更新的话，那么只需要覆盖下面的属性即可
       n2.el = n1.el;
       instance.vnode = n2;
@@ -214,8 +219,21 @@ export function createRenderer(options) {
     // 判断是否有children，如果那么判断是字符串还是数据
     if (children) {
       if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
-        el.textContent = children;
+        // 举个栗子
+        // render(){
+        //     return h("div",{},"test")
+        // }
+        // 这里 children 就是 test ，只需要渲染一下就完事了
+        // el.textContent = children;
+      console.log(`处理文本:${vnode.children}`);
+        hostSetElementText(el, vnode.children)
       } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+        // 举个栗子
+        // render(){
+        // Hello 是个 component
+        //     return h("div",{},[h("p"),h(Hello)])
+        // }
+        // 这里 children 就是个数组了，就需要依次调用 patch 递归来处理
         mountChildren(children, el, parentComponent, anchor);
       }
     }
@@ -223,6 +241,9 @@ export function createRenderer(options) {
     // 设置对应的props
     if (props) {
       for (let key in props) {
+        // todo
+        // 需要过滤掉vue自身用的key
+        // 比如生命周期相关的 key: beforeMount、mounted
         const val = props[key];
         // if (!props.hasOwnProperty(key)) return;
         hostPatchProp(el, key, null, val);
@@ -505,6 +526,10 @@ export function createRenderer(options) {
     anchor
   ) {
     children.forEach((vnode) => {
+            // todo
+      // 这里应该需要处理一下 vnodeChild
+      // 因为有可能不是 vnode 类型
+      console.log("mountChildren:", vnode);
       patch(null, vnode, container, parentComponent, anchor);
     });
   }
