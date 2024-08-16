@@ -105,7 +105,8 @@ function handleSetupResult(instance, setupResult) {
 // 确保实例对象上有render函数
 function finishComponentSetup(instance) {
   // 给 instance 设置 render
-
+  console.log(`${instance.type.name}:触发 beforeCreate hook`);
+  console.log(`${instance.type.name}:触发 onVnodeBeforeCreate hook`);
   // 先取到用户设置的 component options
   const Component = instance.type; // type 时间实例
   if (!instance.render) {

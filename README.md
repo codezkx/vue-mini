@@ -83,11 +83,45 @@ module.exports = {
 
 > 1、监听响应式对象
 >
-> 
->
 > 2、监听函数(普通值需要使用函数进行监听)
 >
 > 3、监听多个响应式值, 数组形式.
+
+### Runtime-core
+
+> 1. 根据提供的根元素#app创建vnode对象
+> 1. 执行render函数 -> 调用patch函数
+> 3. 判断元素类型
+>    1. 如果是文本类型直接element.append(text)
+>    2. 如果是组件
+
+#### 组件类型
+
+> 1. 调用processComponent
+>    1. 判断是否初始化利用n1(初始化时没有)
+>       1. 如果没有初始化则调用mountComponent函数: 作用创建组件实例对象
+>          1. 调用setupComponent:  初始组件属性及其render
+>             1. 初始化Props/slots
+>             2. setupStatefulComponent
+>                1. 对组件实例进行代理
+>                2. 组件是否有setup函数
+>                   1. 如果有在调用setup期间, 写入组件实例. 然后处理setup返回值setupResult
+>                      1. 函数: 直接赋值给render函数
+>                      2. 对象: 需要对setupResult进行代理, 这里做了解构处理,也就是在模版上访问ref响应式对象时不需要.value
+>                      3. 如果都没有则把模版template传给render函数
+>          2. setupRenderEffect: 
+>             1. 添加组件实例方法update, update作用: 把实例对象绑定到render函数上, 递归调用patch方法.
+>             2. 处理render函数, 利用effect(创建一个ReactiveEffect实例)函数执行render函数
+>             3. 执行run()方法, instance.render.call(proxy, proxy)对render函数绑定代理对象, 使其能访问到组件实例对象.
+> 2. 
+
+
+
+
+
+
+
+
 
 ## 双端对比
 

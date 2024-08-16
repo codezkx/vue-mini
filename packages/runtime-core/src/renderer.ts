@@ -156,12 +156,24 @@ export function createRenderer(options) {
           const { proxy } = instance;
           // 把代理对象绑定到render中; 缓存上一次的subTree   可在 render 函数中通过 this 来使用 proxy
           const subTree = (instance.subTree = normalizeVNnode(instance.render.call(proxy, proxy)));
+          console.log("subTree", subTree);
+          // todo
+          console.log(`${instance.type.name}:触发 beforeMount hook`);
+          console.log(`${instance.type.name}:触发 onVnodeBeforeMount hook`);
           // 把父级实例传入到渲染过程中 主要实现provide/inject功能
           patch(null, subTree, container, instance, anchor);
           // 获取当前的组件实例根节点
           vnode.el = subTree.el;
-          instance.isMounted = true;
+          
+          console.log(`${instance.type.name}:触发 mounted hook`);
+          instance.isMounted = true; // DOM初始化完成
         } else {
+          // 响应式的值变更后会从这里执行逻辑
+          // 主要就是拿到新的 vnode ，然后和之前的 vnode 进行对比
+          console.log(`${instance.type.name}:调用更新逻辑`);
+
+          // 如果有 next 的话， 说明需要更新组件的数据（props，slots 等）
+          // 先更新组件的数据，然后更新完成后，在继续对比当前组件的子元素
           // 更新组件的Props
           const { next, vnode } = instance
           if (next) {
@@ -175,10 +187,19 @@ export function createRenderer(options) {
           const prevSubTree = instance.subTree; // 获取p之前的subTree
           // 更新subTree
           instance.subTree = subTree;
+
+          // 触发 beforeUpdated hook
+          console.log(`${instance.type.name}:触发 beforeUpdated hook`);
+          console.log(`${instance.type.name}:触发 onVnodeBeforeUpdate hook`);
+
           // // 把父级实例传入到渲染过程中 主要实现provide/inject功能
           patch(prevSubTree, subTree, container, instance, anchor);
           // // 获取当前的组件实例根节点
           // vnode.el = subTree.el;
+
+          // 触发 updated hook
+          console.log(`${instance.type.name}:触发 updated hook`);
+          console.log(`${instance.type.name}:触发 onVnodeUpdated hook`);
         }
       }, 
       {
@@ -194,7 +215,6 @@ export function createRenderer(options) {
       需要出发依赖是响应式发生更行, 在更具变化的值去对比是否需要发生更新.、
         1、首先判断是否为初始化
         2、需要获取上一次更新的subTree和当前的subTree进行递归对比
-
   */
   function processElement(
     n1,
@@ -313,6 +333,10 @@ export function createRenderer(options) {
   }
 
   /**
+   * @param c1 老节点
+   * @param c2 新节点
+   * @param container 容器
+   * @param parentComponent 父容器
    * 
    * @description
    *  diff算法核心逻辑 也是vue3最核心的地方
@@ -323,7 +347,9 @@ export function createRenderer(options) {
     const l2 = c2.length;
     let e1 = c1.length - 1; // 注意是从0开始的
     let e2 = l2 - 1;
-    // 1、左则对比确定i的值
+    // 1、左则对比确定i的值  i 是从0开始的
+    // (a b) c  2
+    // (a b) d e  3
     while (i <= e1 && i <= e2) {
       const n1 = c1[i];
       const n2 = c2[i];
@@ -331,19 +357,28 @@ export function createRenderer(options) {
         // 如果两个元素相同，需要递归判断执行children
         patch(n1, n2, container, parentComponent, anchor);
       } else {
+        console.log("两个 child 不相等(从左往右比对)");
+        console.log(`prevChild:${n1}`);
+        console.log(`nextChild:${n2}`);
         // 如果元素不相同，则结束当前循环
         break;
       }
       i++;
     }
     // 2、右侧对比 定位出e1和e2的位置 方便删除或者添加元素
+    // a (b c)
+    // d e (b c)
     while (i <= e1 && i <= e2) {
       const n1 = c1[e1];
       const n2 = c2[e2];
       if (isSameVNodeType(n1, n2)) {
+        console.log("两个 child 相等，接下来对比这两个 child 节点(从右往左比对)");
         // 如果两个元素相同，需要递归判断执行children
         patch(n1, n2, container, parentComponent, anchor);
       } else {
+        console.log("两个 child 不相等(从右往左比对)");
+        console.log(`prevChild:${n1}`);
+        console.log(`nextChild:${n2}`);
         // 如果元素不相同，则结束当前循环
         break;
       }
@@ -361,6 +396,7 @@ export function createRenderer(options) {
         const anchor = nextPos < l2 ? c2[nextPos].el : null;
         // 循环渲染c2[i]新增的元素
         while (i <= e2) {
+          console.log(`需要新创建一个 vnode: ${c2[i].key}`);
           patch(null, c2[i], container, parentComponent, anchor);
           i++;
         }
@@ -368,6 +404,7 @@ export function createRenderer(options) {
     } else if (i > e2) {
       // 4、左侧 (a b) c => (a b)； 右侧：a (b c) => (b c)
       while (i <= e1) {
+        console.log(`需要删除当前的 vnode: ${c1[i].key}`);
         hostRemove(c1[i].el);
         i++;
       }
