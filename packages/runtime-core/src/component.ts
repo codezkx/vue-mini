@@ -131,6 +131,6 @@ export function getCurrentInstance() {
 
 let compiler;
 export function registerRuntimeCompiler(_compiler) {
-  console.log(_compiler, '_compiler')
+  console.log(_compiler, "_compiler");
   compiler = _compiler;
 }

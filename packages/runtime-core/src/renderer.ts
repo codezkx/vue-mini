@@ -83,7 +83,7 @@ export function createRenderer(options) {
       parentComponent
     ));
     console.log(`创建组件实例:${instance.type.name}`);
-    // 初始组件属性  Props/slots/render 
+    // 初始组件属性  Props/slots/render
     setupComponent(instance);
     // 处理render函数
     setupRenderEffect(
@@ -96,30 +96,30 @@ export function createRenderer(options) {
   }
 
   /**
-   * 
+   *
    * @description
    *  1、更新组件的数据
    *  2、调用组件的rander函数
    *  3、检查是否需要更新
-   * 
-  */
+   *
+   */
   function updateComponent(n1, n2, container, parentComponent, anchor) {
     console.log("更新组件", n1, n2);
-    
+
     // n2可能时没有component需要初始化
     const instance = (n2.component = n1.component);
     if (shouldUpdateComponent(n1, n2)) {
       console.log(`组件需要更新: ${instance}`);
 
       // 那么 next 就是新的 vnode 了（也就是 n2）
-      instance.next = n2 // 引用之前的虚拟节点
+      instance.next = n2; // 引用之前的虚拟节点
       // 这里的 update 是在 setupRenderEffect 里面初始化的，update 函数除了当内部的响应式对象发生改变的时候会调用
       // 还可以直接主动的调用(这是属于 effect 的特性)
       // 调用 update 再次更新调用 patch 逻辑
       // 在update 中调用的 next 就变成了 n2了
       // ps：可以详细的看看 update 中 next 的应用
       // TODO 需要在 update 中处理支持 next 的逻辑
-      instance.update()
+      instance.update();
     } else {
       console.log(`组件不需要更新: ${instance}`);
       // 不需要更新的话，那么只需要覆盖下面的属性即可
@@ -147,15 +147,17 @@ export function createRenderer(options) {
     // 收集数据改变之后要做的事 (函数)
     // 依赖收集   effect 函数
     // 触发依赖
-    instance.update = effect(() => 
-      {
-        // 
+    instance.update = effect(
+      () => {
+        //
         if (!instance.isMounted) {
           console.log(`${instance.type.name}:调用 render,获取 subTree`);
           // proxy 是代理instance对象
           const { proxy } = instance;
           // 把代理对象绑定到render中; 缓存上一次的subTree   可在 render 函数中通过 this 来使用 proxy
-          const subTree = (instance.subTree = normalizeVNnode(instance.render.call(proxy, proxy)));
+          const subTree = (instance.subTree = normalizeVNnode(
+            instance.render.call(proxy, proxy)
+          ));
           console.log("subTree", subTree);
           // todo
           console.log(`${instance.type.name}:触发 beforeMount hook`);
@@ -164,7 +166,7 @@ export function createRenderer(options) {
           patch(null, subTree, container, instance, anchor);
           // 获取当前的组件实例根节点
           vnode.el = subTree.el;
-          
+
           console.log(`${instance.type.name}:触发 mounted hook`);
           instance.isMounted = true; // DOM初始化完成
         } else {
@@ -175,10 +177,10 @@ export function createRenderer(options) {
           // 如果有 next 的话， 说明需要更新组件的数据（props，slots 等）
           // 先更新组件的数据，然后更新完成后，在继续对比当前组件的子元素
           // 更新组件的Props
-          const { next, vnode } = instance
+          const { next, vnode } = instance;
           if (next) {
             next.el = vnode.el;
-            updateComponentPreRender(instance, next)
+            updateComponentPreRender(instance, next);
           }
 
           const { proxy } = instance;
@@ -201,11 +203,11 @@ export function createRenderer(options) {
           console.log(`${instance.type.name}:触发 updated hook`);
           console.log(`${instance.type.name}:触发 onVnodeUpdated hook`);
         }
-      }, 
+      },
       {
         scheduler() {
-          queueJob(instance.update)
-        }
+          queueJob(instance.update);
+        },
       }
     );
   }
@@ -245,8 +247,8 @@ export function createRenderer(options) {
         // }
         // 这里 children 就是 test ，只需要渲染一下就完事了
         // el.textContent = children;
-      console.log(`处理文本:${vnode.children}`);
-        hostSetElementText(el, vnode.children)
+        console.log(`处理文本:${vnode.children}`);
+        hostSetElementText(el, vnode.children);
       } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
         // 举个栗子
         // render(){
@@ -337,10 +339,10 @@ export function createRenderer(options) {
    * @param c2 新节点
    * @param container 容器
    * @param parentComponent 父容器
-   * 
+   *
    * @description
    *  diff算法核心逻辑 也是vue3最核心的地方
-   * 
+   *
    */
   function patchKeyedChildren(c1, c2, container, parentComponent, anchor) {
     let i = 0;
@@ -372,7 +374,9 @@ export function createRenderer(options) {
       const n1 = c1[e1];
       const n2 = c2[e2];
       if (isSameVNodeType(n1, n2)) {
-        console.log("两个 child 相等，接下来对比这两个 child 节点(从右往左比对)");
+        console.log(
+          "两个 child 相等，接下来对比这两个 child 节点(从右往左比对)"
+        );
         // 如果两个元素相同，需要递归判断执行children
         patch(n1, n2, container, parentComponent, anchor);
       } else {
@@ -387,11 +391,18 @@ export function createRenderer(options) {
     }
     // 3、新的比老的长
     // 3.1 左侧对比 // 3.1 右侧对比
-    // (a b)              (a b) 1 0
-    // (a b) c            d c (a b) 12
+    // (a b)   e1 = 1  ℹ = 2        (a b) 1 0   e1 = 1  ℹ = 2
+    // (a b) c d  e2 = 3           d c (a b) 12  e1 = 3  ℹ = 2
     if (i > e1) {
       if (i <= e2) {
         // 如果使用 nextPos = i + 1 那么c2[i]会一直获取到c， anchor一直是null 渲染出来的结果就是 a b c d
+        // 如果是这种情况的话就说明 e2 也就是新节点的数量大于旧节点的数量
+        // 也就是说新增了 vnode
+        // 应该循环 c2
+        // 锚点的计算：新的节点有可能需要添加到尾部，也可能添加到头部，所以需要指定添加的问题
+        // 要添加的位置是当前的位置(e2 开始)+1
+        // 因为对于往左侧添加的话，应该获取到 c2 的第一个元素
+        // 所以我们需要从 e2 + 1 取到锚点的位置
         const nextPos = e2 + 1;
         const anchor = nextPos < l2 ? c2[nextPos].el : null;
         // 循环渲染c2[i]新增的元素
@@ -421,16 +432,16 @@ export function createRenderer(options) {
       // 1、设置对应的元素下标值
       const s1 = i;
       const s2 = i;
-			/* 
+      /* 
 				下面两步
 					5.1.1
 						a,b,(c,e,d),f,g
 						a,b,(e,c),f,g
 						中间部分，老的比新的多， 那么多出来的直接就可以被干掉(优化删除逻辑)
 			*/
-			const toBePatched = e2 - s2 + 1; // 新节点不同的总数  (e,c)  为
+      const toBePatched = e2 - s2 + 1; // 新节点不同的总数  (e,c)  为
       // 记录新节点更新了几次
-			let patched = 0; 
+      let patched = 0;
       // 2、设置对应的映射
       const keyToNewIndexMap = new Map();
       /* 
@@ -439,27 +450,29 @@ export function createRenderer(options) {
         a,b,(e,c,d),f,g
       */
       // 创建一个定长的数组来优化性能
-      const newIndexToOdlIndexMap = new Array();
+      const newIndexToOldIndexMap = new Array();
       // 初始还数组 0 代表为null  反向遍历获取稳定的序列 因为左右两边是稳定的序列(左右两边对比得出)
-      for (let j = toBePatched - 1; j >= 0; j--) newIndexToOdlIndexMap[j] = 0;
+      for (let j = toBePatched - 1; j >= 0; j--) newIndexToOldIndexMap[j] = 0;
 
       let moved = false;
       let maxNewIndexSoFar = 0;
 
-      // 3、循环c2设置对应的Map
+      // 3、循环c2设置对应的Map   取其变化的位置的部分
       for (let j = s2; j <= e2; j++) {
         const nextChild: any = c2[j];
         keyToNewIndexMap.set(nextChild.key, j);
       }
 
-      // 4、遍历新的节点
+      // 4、遍历老节点
+      // 1. 需要找出老节点有，而新节点没有的 -> 需要把这个节点删除掉
+      // 2. 新老节点都有的，—> 需要 patch
       for (let j = s1; j <= e1; j++) {
         const prevChild = c1[j];
-				// 如果 patched 更新的节点 >= 新节点的总数 说明来节点还有新节点没有的节点,需要删除.
-				if (patched >= toBePatched) {
-					hostRemove(prevChild.el)
-					continue;
-				}
+        // 如果 patched 更新的节点 >= 新节点的总数 说明来节点还有新节点没有的节点,需要删除.
+        if (patched >= toBePatched) {
+          hostRemove(prevChild.el);
+          continue;
+        }
 
         let newIndex;
         // 当key存在时, 获取的对应的索引值
@@ -480,20 +493,28 @@ export function createRenderer(options) {
         } else {
           // 这里判断元素是否需要移动, 因为如果c2元素是一个递增, 那么一定是不需要移动元素的. 上一个的newIndex一定比下一个的小.
           if (newIndex >= maxNewIndexSoFar) {
-            maxNewIndexSoFar = newIndex
+            maxNewIndexSoFar = newIndex;
           } else {
-            moved = true
+            moved = true;
           }
           // 这里已经确保c1/c2 存在相同的元素(位置不一样)
           // 为什么要减去s2  newIndex是从c1第一个元素开始的, newIndexToOdlIndexMap是从不同(与c1对比过后)元素的位置开始
-          newIndexToOdlIndexMap[newIndex - s2] = j + 1; // 需要注意的是i不能为0  所以需要+1  
+          newIndexToOldIndexMap[newIndex - s2] = j + 1; // 需要注意的是i不能为0  所以需要+1
           // 递归查看children是否有更改
           patch(prevChild, c2[newIndex], container, parentComponent, null);
-					patched++;
+          patched++;
         }
       }
-      // 获取最长递增子序列
-      const increasingNewIndexSequence = moved ? getSequence(newIndexToOdlIndexMap) : [];
+      // 利用最长递增子序列来优化移动逻辑
+      // 因为元素是升序的话，那么这些元素就是不需要移动的
+      // 而我们就可以通过最长递增子序列来获取到升序的列表
+      // 在移动的时候我们去对比这个列表，如果对比上的话，就说明当前元素不需要移动
+      // 通过 moved 来进行优化，如果没有移动过的话 那么就不需要执行算法
+      // getSequence 返回的是 newIndexToOldIndexMap 的索引值
+      // 所以后面我们可以直接遍历索引值来处理，也就是直接使用 toBePatched 即可
+      const increasingNewIndexSequence = moved
+        ? getSequence(newIndexToOldIndexMap)
+        : []; // 获取最长递增子序列
       let j = increasingNewIndexSequence.length - 1; // 反向获取
       for (let k = toBePatched - 1; k >= 0; k--) {
         // 需要移动的位置  a,b,(e,c,d),f,g  s2 为 e 的下标值2; k 就需要移动的位置
@@ -506,14 +527,14 @@ export function createRenderer(options) {
             a,b,(c,e),f,g
             a,b,(e,c,d),f,g
         */
-        if (newIndexToOdlIndexMap[k] === 0) {
+        if (newIndexToOldIndexMap[k] === 0) {
           // 为什么需要anchor? 因为需要知道添加到那个元素之前
-          patch(null, nextChild, container, parentComponent, anchor)
-        } else if(moved) {
-           // 判断当前节点是否需要移动
+          patch(null, nextChild, container, parentComponent, anchor);
+        } else if (moved) {
+          // 判断当前节点是否需要移动
           if (j < 0 || k !== increasingNewIndexSequence[j]) {
             // 移动位置
-            hostInsert(nextChild.el, container, anchor)
+            hostInsert(nextChild.el, container, anchor);
           } else {
             j++;
           }
@@ -563,7 +584,7 @@ export function createRenderer(options) {
     anchor
   ) {
     children.forEach((vnode) => {
-            // todo
+      // todo
       // 这里应该需要处理一下 vnodeChild
       // 因为有可能不是 vnode 类型
       console.log("mountChildren:", vnode);
@@ -581,19 +602,18 @@ function updateComponentPreRender(instance, nextNVode) {
   // 现在 instance.vnode 是组件实例更新前的
   // 所以之前的 props 就是基于 instance.vnode.props 来获取
   // 接着需要更新 vnode ，方便下一次更新的时候获取到正确的值
-  instance.vnode = nextNVode
+  instance.vnode = nextNVode;
   // TODO 后面更新 props 的时候需要对比
   // const prevProps = instance.vnode.props;
-  instance.next = null
-  instance.props = nextNVode.props
+  instance.next = null;
+  instance.props = nextNVode.props;
 }
-
 
 /**
  * @description
  *  获取最长递增子序列
  *  例子: [4, 2, 3, 1, 5] => [1, 2, 4](获取的的是下标值)
- * 
+ *
  **/
 function getSequence(arr: number[]): number[] {
   const p = arr.slice();

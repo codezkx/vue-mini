@@ -1,5 +1,5 @@
 /* 
-   思路: 获取父组件的当前组件传入下来的children, 然后渲染到自组件的对应位置  
+   思路: 获取父组件的当前组件传入下来的children, 然后渲染到子组件的对应位置  
     1、获取当前组件的children
     2、判断children是否是slots
       1、首先判断是否为组件
@@ -28,13 +28,13 @@ export function initSlots(instance, children) {
 // 处理具名插槽  实现key value形式.
 function normalizeObjectSlots(children, slots) {
   for (let key in children) {
-    const value = children[key]
+    const value = children[key];
     if (isFunction(value)) {
-      slots[key] = (props) => normalizeSlotValue(value(props))
+      slots[key] = (props) => normalizeSlotValue(value(props));
     }
   }
 }
 
 function normalizeSlotValue(value) {
-  return isArray(value) ? value : [value] 
+  return isArray(value) ? value : [value];
 }
