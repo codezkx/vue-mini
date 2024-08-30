@@ -271,8 +271,17 @@ export function createRenderer(options) {
         hostPatchProp(el, key, null, val);
       }
     }
+    // 触发 beforeMount() 钩子
+    console.log("vnodeHook  -> onVnodeBeforeMount");
+    console.log("DirectiveHook  -> beforeMount");
+    console.log("transition  -> beforeEnter");
     // 添加到对应的容器上
     hostInsert(el, container, anchor);
+    // todo
+    // 触发 mounted() 钩子
+    console.log("vnodeHook  -> onVnodeMounted");
+    console.log("DirectiveHook  -> mounted");
+    console.log("transition  -> enter");
   }
 
   function patchElement(n1, n2, container, parentComponent, anchor) {

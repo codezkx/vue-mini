@@ -132,7 +132,24 @@ module.exports = {
 >
 > 
 
+### Provide-inject
 
+> - Provide
+>
+>   - 利用 getCurrentInstance 获取当前的组件的实例, 又因为实例上的provide是在创建时取自 父组件 中的实例的provide
+>
+>   - 如何跨组件传递参数呢
+>
+>     > 利用原型链来解决 provides = currentInstance.provides = Object.create(parentProvides);
+>
+> - inject
+>
+>   - 利用 getCurrentInstance 获取当前的组件的实例, 
+>   - 利用原型链查找对应的值
+>
+> 
+>
+> 
 
 ### Runtime-core
 
