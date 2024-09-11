@@ -23,6 +23,7 @@ class RefImpl {
   }
 
   get value() {
+    // 收集依赖
     trackRefValue(this);
     return this._value;
   }
@@ -64,15 +65,15 @@ export function unRef(value) {
 const shallowUnwrapHandlers: ProxyHandler<any> = {
   get: (target, key, receiver) => unRef(Reflect.get(target, key, receiver)),
   set: (target, key, value, receiver) => {
-    const oldValue = target[key]
+    const oldValue = target[key];
     if (isRef(oldValue) && !isRef(value)) {
-      oldValue.value = value
-      return true
+      oldValue.value = value;
+      return true;
     } else {
-      return Reflect.set(target, key, value, receiver)
+      return Reflect.set(target, key, value, receiver);
     }
   },
-}
+};
 
 // 实现在模板访问ref时不需要.value 此方法就是解构的方法
 export function proxyRefs(objectWithRefs) {
@@ -81,5 +82,7 @@ export function proxyRefs(objectWithRefs) {
       因为需要在获取和设置时需要触发get 和 set  又因为objectWithRefs是对象
       所以使用proxy  （如果不是对象需要特别处理， 这里就不做处理了）
   */
-  return isReactive(objectWithRefs) ? objectWithRefs : new Proxy(objectWithRefs, shallowUnwrapHandlers);
+  return isReactive(objectWithRefs)
+    ? objectWithRefs
+    : new Proxy(objectWithRefs, shallowUnwrapHandlers);
 }

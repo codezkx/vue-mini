@@ -65,10 +65,10 @@ export function track(target, key) {
     // 2.1、为空则初始化Map
     depsMap = new Map(); // 第一次执行时没有对应的key value 则初始化
     // 2.2、存储对应的Map
-    targetMap.set(target, depsMap);  // Map({} => Map())
+    targetMap.set(target, depsMap); // Map({} => Map())
   }
   // 3、利用key取出对应的Set  dep =>  Set(key){activeEffect}
-  let dep = depsMap.get(key); // 取出 dep的 Set  
+  let dep = depsMap.get(key); // 取出 dep的 Set
   // 4、判断Set是否为空
   if (!dep) {
     // 4.1、如果为空初始化Set
