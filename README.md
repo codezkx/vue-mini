@@ -39,13 +39,27 @@ module.exports = {
 
 ### reactive
 
+- 思想
 
+  > 1、利用proxy创建一个代理对象
+  >
+  > 2、在读取代理对象属性时, 如果target对象不是一个只读对象, 则需要收集依赖 track
+  >
+  > 3、在改变代理对象数据时, 会出发proxy里面的set方法. 这时触发依赖, 然后更新对应的值
 
 ### ref
 
 - 思想
 
-  > 利用class中的get/set 属性来对ref中的基础类型值进行监听, 如果是对象则利用reactive来进行proxy代理对应对象
+  > 1、判断传入的value是不是一个ref, 如何是直接返回. 否则实现RefImpl接口
+  >
+  > 2、将传入的value进行去除响应式利用toRaw得到最初的值
+  >
+  > 3、如何value是一个对象则直接利用reactive生成响应式对象
+  >
+  > 4、利用class中的get/set 属性来对ref中的基础类型值进行监听, 如果是对象则利用reactive来进行proxy代理对应对象
+  >
+  > 
 
 - 过程
 

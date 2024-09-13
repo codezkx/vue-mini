@@ -47,6 +47,9 @@ function trackRefValue(ref) {
 }
 
 export function ref(value) {
+  if (isRef(value)) {
+    return value
+  }
   return new RefImpl(value);
 }
 
