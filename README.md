@@ -78,6 +78,24 @@ module.exports = {
 
   > 利用你isRef判断是否为ref如果是返回ref.value不是返回原值, 值的注意的是如果ref是一个对象那么使用unref后只是把它改变成不是ref的对象, 但是这个对象还是reactive对象。在初始化时进行操作的.
 
+#### toRef
+
+- 思想
+
+  > 可以将值、refs 或 getters 规范化为 refs 
+
+#### toValue
+
+- 思想
+
+  > 将值、refs 或 getters 规范化为值。这与 [unref()](https://cn.vuejs.org/api/reactivity-utilities.html#unref) 类似，不同的是此函数也会规范化 getter 函数。如果参数是一个 getter，它将会被调用并且返回它的返回值。
+
+#### toRefs
+
+- 思想
+
+  > 将一个响应式对象转换为一个普通对象，这个普通对象的每个属性都是指向源对象相应属性的 ref。每个单独的 ref 都是使用 [`toRef()`](https://cn.vuejs.org/api/reactivity-utilities.html#toref) 创建的。
+
 ### computed
 
 - 思想

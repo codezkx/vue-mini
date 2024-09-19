@@ -2,6 +2,7 @@ import {
   mutableHandler,
   readonlyHandlers,
   shallowReadonlyHhandlers,
+  shallowReactiveHhandlers,
 } from "./baseHandlers";
 import { ReactiveFlags } from "./constants";
 
@@ -23,7 +24,11 @@ export function isReadonly(row) {
 }
 
 export function isShallow(value: unknown): boolean {
-  return !!(value && value [ReactiveFlags.IS_SHALLOW])
+  return !!(value && value[ReactiveFlags.IS_SHALLOW]);
+}
+
+export function shallowReactive(row) {
+  return createActiveObject(row, shallowReactiveHhandlers);
 }
 
 export function shallowReadonly(row) {
@@ -32,6 +37,11 @@ export function shallowReadonly(row) {
 
 export function isProxy(row) {
   return isReactive(row) || isReadonly(row);
+}
+
+export function toRaw(observed) {
+  const raw = observed && observed[ReactiveFlags.RAW];
+  return raw ? toRaw(raw) : observed;
 }
 
 function createActiveObject(target, baseHandlers) {

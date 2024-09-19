@@ -10,19 +10,22 @@ const get = createGetter(false);
 const set = createSetter();
 
 const readonlyGet = createGetter(true);
+const shallowReactiveGet = createGetter(false, true);
 const shallowReadonlyGet = createGetter(true, true);
 
 export const mutableHandler = { get, set };
 
 function createGetter(isReadonly = false, isShallow = false) {
-  return function (target, key) {
+  return function (target, key, receiver) {
     // 判断是否为 Reactive
     if (key === ReactiveFlags.IS_REACTIVE) {
       return !isReadonly;
     } else if (key === ReactiveFlags.IS_READONLY) {
       return isReadonly;
     } else if (key === ReactiveFlags.IS_SHALLOW) {
-      return isShallow
+      return isShallow;
+    } else if (key === ReactiveFlags.RAW) {
+      return target;
     }
     // 收集依赖
     if (!isReadonly) {
@@ -62,6 +65,10 @@ export const readonlyHandlers = {
     return true;
   },
 };
+
+export const shallowReactiveHhandlers = extend({}, readonlyHandlers, {
+  get: shallowReactiveGet,
+});
 
 export const shallowReadonlyHhandlers = extend({}, readonlyHandlers, {
   get: shallowReadonlyGet,
