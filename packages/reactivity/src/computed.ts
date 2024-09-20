@@ -10,12 +10,13 @@ class ComputedRefImpl {
     this._getter = getter;
     this._effect = new ReactiveEffect(getter, () => {
       if (!this.dirty) {
-        this.dirty = true;
+        this.dirty = true; // 当响应式属性更新数据时, 会执行这个函数 scheduler 方法. 重制dirty
       }
     });
   }
 
   get value() {
+    
     if (this.dirty) {
       this._value = this._effect.run();
       this.dirty = false;

@@ -8,6 +8,7 @@ describe("computed", () => {
       age: 1,
     });
     const age = computed(() => {
+      user.age
       return user.age;
     });
     expect(age.value).toBe(1);

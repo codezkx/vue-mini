@@ -100,7 +100,10 @@ module.exports = {
 
 - 思想
 
-  > 传入一个函数getter,  然后实例化ReactiveEffect并传入第二个参数使用来初始化dirty属性(判断是否需要更新值), 当读取计算属性时会触发effect.run()方法也就是执行getter. 这个期间会对响应式属性进行响应式依赖收集, 并获取返回值.
+  > - 传入一个函数getter,  然后实例化ReactiveEffect并传入, 第二个参数使用来初始化dirty属性(判断是否需要更新值).
+  > - 当读取计算属性时会触发effect.run()方法也就是执行getter. 返回对应的值
+  > - 计算属性的缓存思想: 利用dirty属性进行控制的, 当多次调用计算属性时 dirty 作为 “开关”把数据没有更新的情况下的操作, 统统返回旧数据
+  > - 当被计算属性 “监听”的响应式属性 变化时会出发 响应式系统的 调度员方法*scheduler*. 重制dirty属性的值
   
 
 ### watchEffect
@@ -108,6 +111,12 @@ module.exports = {
 - 思想
 
 > 创建一个 ReactiveEffect(getter, scheduler) 然后执行run方法收集依赖,返回 stop方法. 当更新响应式数据时触发依赖调用scheduler回调函数, 然后执行任务队列, 也就是run()方法.  为什么要用任务队列异步处理? 因为更新可能是批量的, 可以优化更新批量统一处理更新逻辑, 可以优化性能，避免在同一个事件循环中多次更新DOM，从而减少重绘和重排的次数。
+
+### 异步更行机制
+
+- 思想
+
+  > 当一次更新需要出发多个响应式数据时, vue响应式系统会把对应的 **run/scheduler** 方法添加到任务队列中, 初始调用queueJob会**异步执行**对应的 **run/scheduler**, 再次进来时被“开光”属性isFlushPending控制, 不在次执行**run/scheduler**方法, 而是添加到 任务队列中, 当同步更新执行完成时. 执行才执行**run/scheduler**, 这时候不管前面更新多次响应式数据,  **run/scheduler** 只执行一次
 
 ### Watch
 
