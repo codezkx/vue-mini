@@ -9,7 +9,6 @@ describe("ref", () => {
   });
 
   it("应该是响应式值", () => {
-    debugger
     const a = ref(1);
     let dummy;
     let calls = 0;
@@ -56,7 +55,6 @@ describe("ref", () => {
     });
     expect(unRef(a)).toBe(1);
     expect(unRef(1)).toBe(1);
-
   });
 
   it("proxyRefs", () => {

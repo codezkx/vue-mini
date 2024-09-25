@@ -3,6 +3,7 @@ import { PublicInstanceProxyHandlers } from "./componentPublicInstance";
 import { emit } from "./componentEmit";
 import { initSlots } from "./componentSlots";
 import { initProps } from "./componentProps";
+import { EMPTY_OBJ } from "@mini-vue/shared";
 
 let currentInstance = null;
 
@@ -18,6 +19,7 @@ export function createComponentInstance(vnode, parent) {
     isMounted: false,
     subTree: {},
     slots: {}, // 存放插槽的数据
+    refs: EMPTY_OBJ, // 存储组件或者元素
     emit: () => {},
   };
   // 把组件实例传递给emit第一个参数， 这样用户就不需要传入组件实例了

@@ -1,7 +1,14 @@
 import { track, trigger } from "./effect";
 import { ReactiveFlags } from "./constants";
-import { extend, isObject } from "@mini-vue/shared";
+import { extend, isArray, isObject, isString } from "@mini-vue/shared";
 import { reactive, readonly } from "./reactive";
+import { isRef } from "./ref";
+
+export const isIntegerKey = (key: unknown): boolean =>
+  isString(key) &&
+  key !== "NaN" &&
+  key[0] !== "-" &&
+  "" + parseInt(key, 10) === key;
 
 /* 
   优化点 当get执行时不需要每次调用createGetter或者createSetter，所以只需要模块引用时执行一次即可(利用缓存技术)
@@ -36,6 +43,12 @@ function createGetter(isReadonly = false, isShallow = false) {
     if (isShallow) {
       return res;
     }
+    const targetIsArray = isArray(target);
+    if (isRef(res)) {
+      // ref unwrapping - skip unwrap for Array + integer key.
+      return targetIsArray && isIntegerKey(key) ? res : res.value;
+    }
+
     // 处理对象嵌套问题
     if (isObject(res)) {
       return isReadonly ? readonly(res) : reactive(res);

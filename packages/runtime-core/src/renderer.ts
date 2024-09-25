@@ -50,6 +50,10 @@ export function createRenderer(options) {
         }
         break;
     }
+    // set ref
+    // if (ref != null && parentComponent) {
+    //   setRef(ref, n1 && n1.ref, parentSuspense, n2 || n1, !n2)
+    // }
   }
 
   function processFragment(n1, n2, container: any, parentComponent, anchor) {

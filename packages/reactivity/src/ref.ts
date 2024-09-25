@@ -141,12 +141,16 @@ export function toValue(source) {
 }
 
 export function toRefs(source) {
-  if (isProxy(source)) {
+  if (!isProxy(source)) {
     console.warn(
       `[Vue warn]: toRefs() expects a reactive object but received a plain one.`
     );
   }
   const result = isArray(source) ? new Array(source.length) : {};
+  // {
+  //   foo: 1,
+  //   bar: 2
+  // }
   for (const key in source) {
     result[key] = propertyToRef(source, key);
   }

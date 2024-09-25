@@ -8,7 +8,7 @@ describe("computed", () => {
       age: 1,
     });
     const age = computed(() => {
-      user.age
+      user.age;
       return user.age;
     });
     expect(age.value).toBe(1);
@@ -30,7 +30,6 @@ describe("computed", () => {
 
     expect(cValue.value).toBe(1);
     expect(getter).toHaveBeenCalledTimes(1);
-
     // should not compute again
     cValue.value;
     expect(getter).toHaveBeenCalledTimes(1);
