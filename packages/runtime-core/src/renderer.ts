@@ -363,7 +363,7 @@ export function createRenderer(options) {
     let e1 = c1.length - 1; // 注意是从0开始的
     let e2 = l2 - 1;
     // 1、左则对比确定i的值  i 是从0开始的
-    // (a b) c  2
+    // (a b) c f 2
     // (a b) d e  3
     while (i <= e1 && i <= e2) {
       const n1 = c1[i];
@@ -381,8 +381,8 @@ export function createRenderer(options) {
       i++;
     }
     // 2、右侧对比 定位出e1和e2的位置 方便删除或者添加元素
-    // a (b c)
-    // d e (b c)
+    // a (b c) 2 -> 0
+    // d e (b c) 3 -> 1
     while (i <= e1 && i <= e2) {
       const n1 = c1[e1];
       const n2 = c2[e2];
@@ -465,9 +465,12 @@ export function createRenderer(options) {
       // 创建一个定长的数组来优化性能
       const newIndexToOldIndexMap = new Array();
       // 初始还数组 0 代表为null  反向遍历获取稳定的序列 因为左右两边是稳定的序列(左右两边对比得出)
+      // 新节点不同的个数的映射(只能确定个数, 不能确定位置)
       for (let j = toBePatched - 1; j >= 0; j--) newIndexToOldIndexMap[j] = 0;
 
+      // 节点是否需要移动
       let moved = false;
+      // 目前为止最大的新索引
       let maxNewIndexSoFar = 0;
 
       // 3、循环c2设置对应的Map   取其变化的位置的部分
@@ -531,7 +534,7 @@ export function createRenderer(options) {
       let j = increasingNewIndexSequence.length - 1; // 反向获取
       for (let k = toBePatched - 1; k >= 0; k--) {
         // 需要移动的位置  a,b,(e,c,d),f,g  s2 为 e 的下标值2; k 就需要移动的位置
-        const nextIndex = s2 + k;
+        const nextIndex = s2 + k; // 右侧对比时就是获取行节点的长度
         const nextChild = c2[nextIndex]; // 获取需要移动的节点
         // anchor是插入元素的上一个元素
         const anchor = nextIndex + 1 < l2 ? c2[nextIndex + 1].el : null;

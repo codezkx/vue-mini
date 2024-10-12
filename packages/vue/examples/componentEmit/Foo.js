@@ -3,8 +3,8 @@ import { h } from "../../dist/mini-vue.esm-bundler.js";
 export const Foo = {
   name: "Foo",
   setup(props, { emit }) {
-    const emitAdd = () => {
-      console.log("add emit");
+    const emitAdd = (i) => {
+      console.log("add emit", i);
       // emit("add");
       emit("add-foo", 1, 2);
     };

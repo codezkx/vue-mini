@@ -122,21 +122,40 @@ module.exports = {
 
 #### 侦听数据源类型
 
-> 1、监听响应式对象
->
-> 2、监听函数(普通值需要使用函数进行监听)
->
-> 3、监听多个响应式值, 数组形式.
+> 1. 注意的是watch和watchEffect, 流程差不多的, 主要区别与第二个参数
+> 2. 将所有的响应式类型(必须是值)转化成**getter**函数
+> 3. 注意的是traverse函数是为了触发响应式数据的 track 依赖收集动作
+> 4. 创一个 ReactiveEffect实例
+>    1. 如何时watchEffect则直接执行 run 方法
+>    2. 而watch是需要返回 newV 和 odlValue的需要更多的处理
+> 5. 返回一个 清除监听的函数 (就是删除实例)
+> 
 
-### Emit
+一个返回响应式对象的 getter 函数，只有在返回不同的对象时，才会触发回调
+
+````vue
+<script setup>
+  const o = reactive({a: 1, b: {c: 1}})
+	watch(
+    () => o.b,
+    () => {
+      // 仅当 o.b 被替换时触发
+    }
+  )
+</script>
+````
+
+> 1. 上面为什么只有改变o.b时才会触发, 是因为执行watch过程中是没有执行 traverse 函数来收集依赖的, 所以只有执行effect.run 才依赖收集.
+> 2. 响应式依赖更新时会触发 effect.scheduler方法, 来触发回调函数
+
+### Emit事件
 
 >- 创建组件实例时把组件实例 instance(注意这个实例是子组件)通过bind绑定给emit
->
->- 当调用emit执行
->  - 先处理event事件名将其改成驼峰名 如 foo -> onFoo | add-foo -> onAddFoo
->  - 在props中回去当前事件属性
->    -  props[handlerName]
->  - 然后执行
+>- 当调用emit执行时, 相当于执行父组件中传入下来的回调函数
+> - 先处理event事件名将其改成驼峰名 如 foo -> onFoo | add-foo -> onAddFoo
+> - 在props中回去当前事件属性
+>   -  props[handlerName]
+> - 然后执行
 >
 >
 
@@ -146,12 +165,12 @@ module.exports = {
 >
 > ````ts
 >  {
->  				default: () => h("p", {}, "123"),
->         header: ({ age }) => [
+>  		default: () => h("p", {}, "123"),
+>        header: ({ age }) => [
 >           h("p", {}, "header" + age),
 >           createTextVNode("纯文本节点"),
 >         ],
->         footer: () => h("p", {}, "footer"),
+>        footer: () => h("p", {}, "footer"),
 >  }
 > ````
 >
@@ -163,11 +182,11 @@ module.exports = {
 > // 把slots转换成虚拟节点(主要处理slots为数组)  props 就是实现作用域插槽, 父组件可以获取到子组件插槽的参数
 > export function renderSlots(slots, name = "default", props = {}) {
 >   const slot = slots[name]; // 获取默认/具名插槽
->   if (slot) {
->     if (isFunction(slot)) {
->       return createVNode(Fragment, {}, slot(props));
+>     if (slot) {
+>         if (isFunction(slot)) {
+>           return createVNode(Fragment, {}, slot(props));
+>         }
 >     }
->   }
 > }
 > ````
 >
@@ -363,7 +382,21 @@ module.exports = {
 >
 > *// d 节点在老的节点中不存在，新的里面存在，所以需要创建*
 
+### 思考
 
+> 1. 索引值确认阶段
+>
+>    1. 左侧对比是确定i的值
+>    2. 右侧对边是确定e1、e2的值
+>
+> 2. 只增加节点或者只减少节点
+>
+>    1. **新**节点比**老**节点**多**, 则直接创建新节点
+>    2. **新**节点比**老**节点**少**, 则直接删除节点
+>
+>    注意: 除了新增或者减少的节点其他节点类型和顺序必须相同
+>
+> 
 
 ## compiler-core
 

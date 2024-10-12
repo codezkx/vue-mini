@@ -19,6 +19,7 @@ export class ReactiveEffect {
 
   // 主要目的是更新依赖和收集依赖
   run() {
+    console.log("run");
     // 当stop后不需要执行后续操作
     if (!this.active) {
       return this?._fn();

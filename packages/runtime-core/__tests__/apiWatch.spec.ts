@@ -11,7 +11,7 @@ describe("api: watch", () => {
       dummy = state.count;
     });
     expect(dummy).toBe(0);
-
+    debugger
     state.count++;
     await nextTick();
     expect(dummy).toBe(1);
