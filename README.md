@@ -513,9 +513,9 @@ module.exports = {
 
 #### Composition API
 
-> 1、vue3新增了组合式API(composition API), 而且保留了vue2中的配置项模式, vue3的CompositionAPI也向前兼容vu2.7, 也就是说vue2也可以使用Composition API
+> 1、vue3新增了组合式API(composition API), 而且保留了vue2中的选项式, vue3的CompositionAPI也向前兼容vu2.7, 也就是说vue2也可以使用Composition API
 >
-> 2、因为配置项模式编写vue代码, 是难以维护的. 因为业务逻辑逻辑可能存在data、conputed、method、watch中. 而composition API可以有开发者自己组织代码的逻辑及其编写位置. Coposition API主要的API有setup()/ref/reactive/computed/readonly//watch/EffectWatch(自动收集依赖)
+> 2、因为选项式编写vue代码, 是难以维护的. 因为业务逻辑可能存在data、conputed、method、watch中. 而composition API可以由开发者自己组织代码的逻辑及其编写位置. Coposition API主要的API有setup()/ref/reactive/computed/readonly//watch/EffectWatch(自动收集依赖)
 
 #### 响应式系统
 
@@ -531,15 +531,15 @@ module.exports = {
 >
 > 2. Proxy代替Object.defineProperty
 >
->    1. Object.defineProperty无法直观的监听对象的新增属性和删除属性, 需要而外的处理
+>    1. Object.defineProperty无法直观的监听对象的新增属性和删除属性, 需要额外的处理
 >    2. Proxy直接对对象进行监听不需要而外处理
 >
 > 3. 编译器优化
 >
 >    > 主要体现在静态节点提升和预编译
 >
->    1. 静态节点: 将每次更新都不会变化的节点,设置为静态节点. 每次重新渲染时不需要重新创建和也无需对比其节点, 这也是vue3中的diff算法的优化
->    2. 预字符串化: 在预编译时将一些静态内容直接换成字符串, 使得渲染时不需要再做而外的计算, 减少了运行时消耗
+>    1. 预字符串化: 在预编译时将一些静态内容直接换成字符串, 使得渲染时不需要再做而外的计算, 减少了运行时消耗
+>    2. 静态节点: 将每次更新都不会变化的节点,设置为静态节点. 每次重新渲染时不需要重新创建和也无需对比其节点, 这也是vue3中的diff算法的优化
 >
 > 4. Fragment
 >
@@ -600,7 +600,7 @@ module.exports = {
 ### 优势
 
 > 1. 提高性能: 通过虚拟DOM, vue可以进行批量的更新DOM, 减少大量的重排重绘, 提升了渲染性能
-> 2. 跨平台: 虚拟DOM抽象了真实DOM得操作, 使得vu e可以在不同的平台进行渲染执行.
+> 2. 跨平台: 虚拟DOM抽象了真实DOM得操作, 使得vue可以在不同的平台进行渲染执行.
 > 3. 简化开发: 开发者只需要关注业务的开发, 不需要关注DOM得更新和优化. Vue会自动处理DOM的更新和优化, 降低了手动操作DOM的复杂性
 
 ## 虚拟DOM作用
